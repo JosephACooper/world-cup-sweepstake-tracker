@@ -81,8 +81,9 @@ const ROUND_ORDER = ["r32", "r16", "qf", "sf", "third", "final"];
 export default function Bracket({ bracket, teamToParticipant }) {
   if (!bracket) return null;
 
-  const hasAnyKnockout = ROUND_ORDER.some(r => (bracket[r] || []).length > 0);
-  if (!hasAnyKnockout) {
+  const lastFilledIdx = ROUND_ORDER.reduce((last, r, i) => (bracket[r] || []).length > 0 ? i : last, -1);
+
+  if (lastFilledIdx === -1) {
     return (
       <div style={{ padding: 16, color: "#3a5070", textAlign: "center", paddingTop: 32 }}>
         Knockout bracket not yet available. Check back after the group stage.
@@ -90,16 +91,18 @@ export default function Bracket({ bracket, teamToParticipant }) {
     );
   }
 
+  const visibleRounds = ROUND_ORDER.slice(0, lastFilledIdx + 1);
+
   return (
     <div style={{ paddingBottom: 16, overflowX: "auto" }}>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start", padding: 16, minWidth: "max-content" }}>
-        {ROUND_ORDER.map(round => {
+        {visibleRounds.map(round => {
           const matches = bracket[round] || [];
-          if (matches.length === 0) return null;
+          const isEmpty = matches.length === 0;
           return (
             <div key={round} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{
-                color: "#3a5070",
+                color: isEmpty ? "#1e3355" : "#3a5070",
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
@@ -109,9 +112,24 @@ export default function Bracket({ bracket, teamToParticipant }) {
               }}>
                 {ROUND_LABELS[round]}
               </div>
-              {matches.map((match, i) => (
-                <MatchCard key={match.id ?? i} match={match} teamToParticipant={teamToParticipant} />
-              ))}
+              {isEmpty ? (
+                <div style={{
+                  background: "#070e18",
+                  border: "1px dashed #132035",
+                  borderRadius: 8,
+                  width: 200,
+                  padding: "16px 10px",
+                  textAlign: "center",
+                  color: "#1e3355",
+                  fontSize: 11,
+                }}>
+                  Fixtures TBD
+                </div>
+              ) : (
+                matches.map((match, i) => (
+                  <MatchCard key={match.id ?? i} match={match} teamToParticipant={teamToParticipant} />
+                ))
+              )}
             </div>
           );
         })}
