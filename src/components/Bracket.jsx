@@ -77,6 +77,7 @@ const cardStyle = {
 
 const ROUND_LABELS = { r32: "Round of 32", r16: "Round of 16", qf: "Quarter-finals", sf: "Semi-finals", third: "3rd Place", final: "Final" };
 const ROUND_ORDER = ["r32", "r16", "qf", "sf", "third", "final"];
+const ROUND_MATCH_COUNTS = { r32: 16, r16: 8, qf: 4, sf: 2, third: 1, final: 1 };
 
 export default function Bracket({ bracket, teamToParticipant }) {
   if (!bracket) return null;
@@ -102,7 +103,7 @@ export default function Bracket({ bracket, teamToParticipant }) {
           return (
             <div key={round} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div style={{
-                color: isEmpty ? "#1e3355" : "#3a5070",
+                color: "#3a5070",
                 fontSize: 11,
                 fontWeight: 700,
                 letterSpacing: "0.08em",
@@ -113,18 +114,9 @@ export default function Bracket({ bracket, teamToParticipant }) {
                 {ROUND_LABELS[round]}
               </div>
               {isEmpty ? (
-                <div style={{
-                  background: "#070e18",
-                  border: "1px dashed #132035",
-                  borderRadius: 8,
-                  width: 200,
-                  padding: "16px 10px",
-                  textAlign: "center",
-                  color: "#1e3355",
-                  fontSize: 11,
-                }}>
-                  Fixtures TBD
-                </div>
+                Array.from({ length: ROUND_MATCH_COUNTS[round] ?? 1 }).map((_, i) => (
+                  <MatchCard key={i} match={null} teamToParticipant={teamToParticipant} />
+                ))
               ) : (
                 matches.map((match, i) => (
                   <MatchCard key={match.id ?? i} match={match} teamToParticipant={teamToParticipant} />
