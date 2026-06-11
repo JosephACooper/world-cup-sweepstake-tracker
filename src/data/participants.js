@@ -25,7 +25,7 @@ export const PARTICIPANTS = [
     teams: [
       { name: "France",       apiName: "France",       flag: "🇫🇷", rank: 3  },
       { name: "Austria",      apiName: "Austria",      flag: "🇦🇹", rank: 24 },
-      { name: "DR Congo",     apiName: "DR Congo",     flag: "🇨🇩", rank: 46 },
+      { name: "Congo DR",      apiName: "DR Congo",     flag: "🇨🇩", rank: 46 },
       { name: "Netherlands",  apiName: "Netherlands",  flag: "🇳🇱", rank: 8  },
     ],
   },
@@ -55,7 +55,7 @@ export const PARTICIPANTS = [
     teams: [
       { name: "Senegal",   apiName: "Senegal",  flag: "🇸🇳", rank: 15 },
       { name: "Australia", apiName: "Australia", flag: "🇦🇺", rank: 27 },
-      { name: "Türkiye",   apiName: "Turkey",   flag: "🇹🇷", rank: 22 },
+      { name: "Turkey",    apiName: "Turkey",   flag: "🇹🇷", rank: 22 },
       { name: "Curaçao",   apiName: "Curacao",  flag: "🇨🇼", rank: 82 },
     ],
   },
@@ -85,7 +85,7 @@ export const PARTICIPANTS = [
     teams: [
       { name: "Brazil",   apiName: "Brazil",          flag: "🇧🇷", rank: 6  },
       { name: "Spain",    apiName: "Spain",            flag: "🇪🇸", rank: 2  },
-      { name: "Czechia",  apiName: "Czech Republic",   flag: "🇨🇿", rank: 40 },
+      { name: "Czech Republic",  apiName: "Czech Republic",   flag: "🇨🇿", rank: 40 },
       { name: "Qatar",    apiName: "Qatar",            flag: "🇶🇦", rank: 56 },
     ],
   },
