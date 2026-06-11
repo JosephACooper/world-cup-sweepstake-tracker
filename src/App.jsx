@@ -16,7 +16,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000;
 const TABS = [
   { id: "fixtures", label: "Fixtures" },
   { id: "tournament", label: "Tournament" },
-  { id: "underdogs", label: "Underdogs" },
+  { id: "underdogs", label: "Leaderboard" },
 ];
 
 export default function App() {

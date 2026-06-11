@@ -1,10 +1,10 @@
 import { getPrizeWinners, STAGE_LABELS, TIERS } from "../utils/scoring.js";
 
 const PRIZE_CONFIG = [
-  { key: "winner", icon: "🥇", label: "World Cup Winner", color: "#c9a227", glow: "#c9a22740" },
-  { key: "runnerUp", icon: "🥈", label: "Runner-up", color: "#94a3b8", glow: "#94a3b840" },
-  { key: "thirdPlace", icon: "🥉", label: "Third Place", color: "#cd7f32", glow: "#cd7f3240" },
-  { key: "underdog", icon: "🏅", label: "Best Underdog", color: "#06b6d4", glow: "#06b6d440", provisional: true },
+  { key: "winner", icon: "🥇", label: "World Cup Winner", prize: "£50", color: "#c9a227", glow: "#c9a22740" },
+  { key: "runnerUp", icon: "🥈", label: "Runner-up", prize: "£25", color: "#94a3b8", glow: "#94a3b840" },
+  { key: "thirdPlace", icon: "🥉", label: "Third Place", prize: "£15", color: "#cd7f32", glow: "#cd7f3240" },
+  { key: "underdog", icon: "🏅", label: "Best Underdog", prize: "£20", color: "#06b6d4", glow: "#06b6d440", provisional: true },
 ];
 
 function fmt(n, { sign = true, dash = true } = {}) {
@@ -24,10 +24,11 @@ function PrizeCard({ config, prizeData }) {
       boxShadow: decided ? `0 0 16px ${config.glow}` : "none",
     }}>
       <div style={{ fontSize: 24, marginBottom: 6 }}>{config.icon}</div>
-      <div style={{ color: "#3a5070", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+      <div style={{ color: "#3a5070", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
         {config.label}
         {config.provisional && prizeData ? <span style={{ marginLeft: 6, color: "#06b6d4" }}>(provisional)</span> : null}
       </div>
+      <div style={{ color: config.color, fontSize: 13, fontWeight: 700, marginBottom: 6 }}>{config.prize}</div>
       {prizeData ? (
         <>
           <div style={{ fontSize: 20, fontWeight: 700, color: "#dde4f0" }}>
