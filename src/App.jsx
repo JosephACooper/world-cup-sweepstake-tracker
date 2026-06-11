@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PARTICIPANTS, teamToParticipant } from "./data/participants.js";
+import { PARTICIPANTS, UNASSIGNED_TEAMS, teamToParticipant } from "./data/participants.js";
 import {
   buildRankLookup,
   computeParticipantScores,
-  deriveGroupBonuses,
   deriveTeamFinishes,
   deriveUpsetBonuses,
   sortLeaderboard,
@@ -65,11 +64,10 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [fetchAll]);
 
-  const rankLookup = useMemo(() => buildRankLookup(PARTICIPANTS), []);
+  const rankLookup = useMemo(() => buildRankLookup(PARTICIPANTS, UNASSIGNED_TEAMS), []);
   const teamFinishes = useMemo(() => deriveTeamFinishes(fixtures.finished || []), [fixtures.finished]);
-  const groupBonuses = useMemo(() => deriveGroupBonuses(standings), [standings]);
   const upsetBonuses = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
-  const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, groupBonuses, upsetBonuses), [teamFinishes, groupBonuses, upsetBonuses]);
+  const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, upsetBonuses), [teamFinishes, upsetBonuses]);
   const leaderboard = useMemo(() => sortLeaderboard(participantData), [participantData]);
   const waiting = useMemo(() => participantData.filter(p => p.bestScore === null), [participantData]);
 

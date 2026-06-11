@@ -1,4 +1,4 @@
-import { getPrizeWinners, STAGE_LABELS } from "../utils/scoring.js";
+import { getPrizeWinners, STAGE_LABELS, TIERS } from "../utils/scoring.js";
 
 const PRIZE_CONFIG = [
   { key: "winner", icon: "🥇", label: "World Cup Winner", color: "#c9a227", glow: "#c9a22740" },
@@ -144,11 +144,11 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
                   <tr style={{ color: "#3a5070" }}>
                     <th style={th({ left: true })}>Team</th>
                     <th style={th()}>Rank</th>
+                    <th style={th()}>Mult</th>
                     <th style={th()}>Stage</th>
-                    <th style={th()}>Prog</th>
-                    <th style={th()}>Group</th>
+                    <th style={th()}>Pts</th>
                     <th style={th()}>Upsets</th>
-                    <th style={th()}>Total</th>
+                    <th style={th()}>Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -156,6 +156,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
                     <tr key={t.name} style={{ borderTop: "1px solid #0d1e30" }}>
                       <td style={td({ left: true, color: "#dde4f0" })}>{t.flag} {t.name}</td>
                       <td style={td()}>#{t.rank}</td>
+                      <td style={td({ color: "#c9a227" })}>×{t.multiplier}</td>
                       <td style={td()}>
                         {t.actual !== null ? (
                           <span style={{
@@ -171,10 +172,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
                         ) : <span style={{ color: "#3a5070" }}>—</span>}
                       </td>
                       <td style={td()}>
-                        <ScorePill value={t.progression} />
-                      </td>
-                      <td style={td()}>
-                        <ScorePill value={t.groupBonus} dim />
+                        {t.actual !== null ? fmt(t.actual * t.multiplier, { sign: false }) : "—"}
                       </td>
                       <td style={td()}>
                         <ScorePill value={t.upsetBonus} dim />
@@ -203,52 +201,43 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
         </div>
         <div style={{ background: "#0b1928", border: "1px solid #132035", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.7, color: "#94a3b8" }}>
           <p style={{ marginTop: 0 }}>
-            Your position is decided by your <strong style={{ color: "#dde4f0" }}>single best-performing team</strong>. If two people tie on score, the bigger underdog (lower FIFA rank) wins. Only positive scores count — a big team underperforming scores 0, not a negative.
+            Your position is decided by your <strong style={{ color: "#dde4f0" }}>single best-performing team</strong>. Score = stage points × rank multiplier + upset bonus. Ties go to the bigger underdog (higher rank number).
           </p>
 
-          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>1. Progression</p>
-          <p style={{ marginTop: 0 }}>
-            How far a team goes vs. how far they were expected to go based on their FIFA rank (June 2026).
-            Score = Points earned − Points expected (floored at 0).
-          </p>
-          <div style={{ overflowX: "auto", marginBottom: 12 }}>
+          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 6 }}>Stage points</p>
+          <div style={{ overflowX: "auto", marginBottom: 16 }}>
             <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}>
-              <thead>
-                <tr style={{ color: "#3a5070" }}>
-                  <th style={th({ left: true })}>Stage</th>
-                  <th style={th()}>Points</th>
-                  <th style={th({ left: true })}>FIFA Rank</th>
-                  <th style={th()}>Expected</th>
-                </tr>
-              </thead>
               <tbody>
                 {[
-                  ["Group exit", "0", "1–8", "4.0"],
-                  ["Round of 32", "0.5", "9–16", "3.0"],
-                  ["Round of 16", "1.0", "17–24", "2.0"],
-                  ["Quarter-final", "2.0", "25–32", "1.0"],
-                  ["Semi-final", "3.0", "33+", "0.0"],
-                  ["Runner-up", "4.0", "", ""],
-                  ["Winner", "5.0", "", ""],
-                ].map(([stage, pts, band, exp]) => (
+                  ["Group exit", "0"], ["Round of 32", "0.5"], ["Round of 16", "1"],
+                  ["Quarter-final", "2"], ["Semi-final", "3"], ["Runner-up", "4"], ["Winner", "5"],
+                ].map(([stage, pts]) => (
                   <tr key={stage} style={{ borderTop: "1px solid #0d1e30" }}>
                     <td style={td({ left: true })}>{stage}</td>
-                    <td style={td()}>{pts}</td>
-                    <td style={td({ left: true })}>{band}</td>
-                    <td style={td()}>{exp}</td>
+                    <td style={{ ...td(), fontWeight: 700, color: "#dde4f0" }}>{pts} pts</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>2. Group stage bonus</p>
-          <p style={{ marginTop: 0 }}>
-            Top the group: <strong style={{ color: "#10b981" }}>+0.5</strong> &nbsp;·&nbsp;
-            Finish 2nd and advance: <strong style={{ color: "#10b981" }}>+0.25</strong>
-          </p>
+          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 6 }}>Rank multiplier (FIFA rankings, June 2026)</p>
+          <div style={{ overflowX: "auto", marginBottom: 16 }}>
+            <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}>
+              <tbody>
+                {TIERS.map(t => (
+                  <tr key={t.label} style={{ borderTop: "1px solid #0d1e30" }}>
+                    <td style={td({ left: true })}>
+                      Rank {t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`}
+                    </td>
+                    <td style={{ ...td(), fontWeight: 700, color: "#c9a227" }}>{t.label}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>3. Upset bonus</p>
+          <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>Upset bonus</p>
           <p style={{ marginTop: 0, marginBottom: 0 }}>
             Beat a team ranked 15+ places above you: <strong style={{ color: "#10b981" }}>+0.5 per win</strong>.
             Applies in group stage and all knockout rounds.

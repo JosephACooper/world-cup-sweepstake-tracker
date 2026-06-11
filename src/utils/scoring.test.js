@@ -2,10 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   buildRankLookup,
   computeParticipantScores,
-  deriveGroupBonuses,
   deriveTeamFinishes,
   deriveUpsetBonuses,
-  getExpected,
+  getMultiplier,
   sortLeaderboard,
 } from "./scoring.js";
 
@@ -14,20 +13,20 @@ function match(stage, homeName, awayName, homeWon, status = "FINISHED") {
   return { status, stage, homeTeam: { name: homeName }, awayTeam: { name: awayName }, score: { winner } };
 }
 
-// ─── getExpected ─────────────────────────────────────────────────────────────
+// ─── getMultiplier ────────────────────────────────────────────────────────────
 
-describe("getExpected", () => {
-  it("maps FIFA ranking bands to expected stage points", () => {
-    expect(getExpected(1)).toBe(4);
-    expect(getExpected(8)).toBe(4);
-    expect(getExpected(9)).toBe(3);
-    expect(getExpected(16)).toBe(3);
-    expect(getExpected(17)).toBe(2);
-    expect(getExpected(24)).toBe(2);
-    expect(getExpected(25)).toBe(1);
-    expect(getExpected(32)).toBe(1);
-    expect(getExpected(33)).toBe(0);
-    expect(getExpected(88)).toBe(0);
+describe("getMultiplier", () => {
+  it("returns correct multiplier for each tier", () => {
+    expect(getMultiplier(1)).toBe(1);
+    expect(getMultiplier(10)).toBe(1);
+    expect(getMultiplier(11)).toBe(1.5);
+    expect(getMultiplier(20)).toBe(1.5);
+    expect(getMultiplier(21)).toBe(2);
+    expect(getMultiplier(35)).toBe(2);
+    expect(getMultiplier(36)).toBe(2.5);
+    expect(getMultiplier(50)).toBe(2.5);
+    expect(getMultiplier(51)).toBe(3);
+    expect(getMultiplier(85)).toBe(3);
   });
 });
 
@@ -53,51 +52,21 @@ describe("deriveTeamFinishes", () => {
   });
 
   it("ignores unfinished matches", () => {
-    const finishes = deriveTeamFinishes([match("QUARTER_FINALS", "Japan", "Germany", null, "SCHEDULED")]);
-    expect(finishes).toEqual({});
+    expect(deriveTeamFinishes([match("QUARTER_FINALS", "Japan", "Germany", null, "SCHEDULED")])).toEqual({});
   });
 });
 
 // ─── buildRankLookup ─────────────────────────────────────────────────────────
 
 describe("buildRankLookup", () => {
-  it("maps apiName to rank across all participants", () => {
-    const lookup = buildRankLookup([
-      { teams: [{ apiName: "Brazil", rank: 6 }, { apiName: "France", rank: 1 }] },
-      { teams: [{ apiName: "Saudi Arabia", rank: 61 }] },
-    ]);
+  it("maps apiName to rank from participants and extra teams", () => {
+    const lookup = buildRankLookup(
+      [{ teams: [{ apiName: "Brazil", rank: 6 }, { apiName: "Japan", rank: 18 }] }],
+      [{ apiName: "Haiti", rank: 83 }],
+    );
     expect(lookup.Brazil).toBe(6);
-    expect(lookup.France).toBe(1);
-    expect(lookup["Saudi Arabia"]).toBe(61);
-  });
-});
-
-// ─── deriveGroupBonuses ───────────────────────────────────────────────────────
-
-describe("deriveGroupBonuses", () => {
-  it("awards 0.5 for 1st, 0.25 for 2nd, nothing for 3rd/4th", () => {
-    const bonuses = deriveGroupBonuses([{
-      group: "GROUP_A",
-      table: [
-        { position: 1, team: { name: "Brazil" } },
-        { position: 2, team: { name: "Canada" } },
-        { position: 3, team: { name: "Haiti" } },
-        { position: 4, team: { name: "Peru" } },
-      ],
-    }]);
-    expect(bonuses.Brazil).toBe(0.5);
-    expect(bonuses.Canada).toBe(0.25);
-    expect(bonuses.Haiti).toBeUndefined();
-    expect(bonuses.Peru).toBeUndefined();
-  });
-
-  it("handles multiple groups", () => {
-    const bonuses = deriveGroupBonuses([
-      { group: "GROUP_A", table: [{ position: 1, team: { name: "Spain" } }] },
-      { group: "GROUP_B", table: [{ position: 1, team: { name: "Japan" } }] },
-    ]);
-    expect(bonuses.Spain).toBe(0.5);
-    expect(bonuses.Japan).toBe(0.5);
+    expect(lookup.Japan).toBe(18);
+    expect(lookup.Haiti).toBe(83);
   });
 });
 
@@ -105,7 +74,7 @@ describe("deriveGroupBonuses", () => {
 
 describe("deriveUpsetBonuses", () => {
   it("awards 0.5 for beating a team ranked 15+ places above", () => {
-    const lookup = { Brazil: 6, "Saudi Arabia": 61 };
+    const lookup = { Brazil: 6, "Saudi Arabia": 60 };
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Brazil", "Saudi Arabia", false)],
       lookup,
@@ -124,21 +93,18 @@ describe("deriveUpsetBonuses", () => {
   });
 
   it("accumulates bonuses across multiple upsets", () => {
-    const lookup = { France: 1, Japan: 18, Germany: 10 };
+    const lookup = { France: 3, Japan: 18 };
     const bonuses = deriveUpsetBonuses([
-      match("GROUP_STAGE", "Japan", "Germany", true),   // 18-10=8, not upset
-      match("ROUND_OF_16", "France", "Japan", false),   // Japan wins; 18-1=17 ≥ 15 ✓
-      match("GROUP_STAGE", "France", "Japan", false),   // Japan wins again; +0.5
+      match("GROUP_STAGE", "France", "Japan", false),   // 18-3=15 ≥ 15 ✓
+      match("ROUND_OF_16", "France", "Japan", false),   // +0.5 again
     ], lookup);
     expect(bonuses.Japan).toBe(1.0);
-    expect(bonuses.Germany).toBeUndefined();
   });
 
   it("skips matches where either team rank is unknown", () => {
-    const lookup = { Brazil: 6 };
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Brazil", "Haiti", false)],
-      lookup,
+      { Brazil: 6 },
     );
     expect(bonuses.Haiti).toBeUndefined();
   });
@@ -148,35 +114,27 @@ describe("deriveUpsetBonuses", () => {
 
 describe("computeParticipantScores", () => {
   const participants = [
-    { name: "A", color: "#fff", teams: [{ name: "France", apiName: "France", flag: "🇫🇷", rank: 1 }] },
-    { name: "B", color: "#fff", teams: [{ name: "Saudi Arabia", apiName: "Saudi Arabia", flag: "🇸🇦", rank: 61 }] },
+    { name: "A", color: "#fff", teams: [{ name: "France",       apiName: "France",       flag: "🇫🇷", rank: 3  }] },
+    { name: "B", color: "#fff", teams: [{ name: "Saudi Arabia", apiName: "Saudi Arabia", flag: "🇸🇦", rank: 60 }] },
   ];
 
-  it("floors negative progression at 0 then adds bonuses", () => {
-    // France SF (3.0 actual), expected 4.0 → progression -1.0 → floored to 0
-    // +0.5 group bonus, +0.5 upset bonus → total 1.0
+  it("scores = stage × multiplier + upsetBonus", () => {
+    // France reaches SF (3.0 pts), multiplier 1× → 3.0, no upsets → 3.0
+    // Saudi Arabia reaches QF (2.0 pts), multiplier 3× → 6.0, one upset → 6.5
     const data = computeParticipantScores(
       participants,
       { France: 3, "Saudi Arabia": 2 },
-      { France: 0.5, "Saudi Arabia": 0.5 },
-      { France: 0.5 },
+      { "Saudi Arabia": 0.5 },
     );
-    const france = data[0].teamsWithScores[0];
-    expect(france.progression).toBe(-1.0);
-    expect(france.groupBonus).toBe(0.5);
-    expect(france.upsetBonus).toBe(0.5);
-    expect(france.score).toBe(1.0);
-    expect(data[0].bestScore).toBe(1.0);
-
-    // Saudi Arabia QF (2.0), expected 0.0 → progression +2.0 + 0.5 group bonus → 2.5
-    const ksa = data[1].teamsWithScores[0];
-    expect(ksa.progression).toBe(2.0);
-    expect(ksa.score).toBe(2.5);
-    expect(data[1].bestScore).toBe(2.5);
+    expect(data[0].teamsWithScores[0].score).toBe(3.0);   // 3.0 × 1 + 0
+    expect(data[0].teamsWithScores[0].multiplier).toBe(1);
+    expect(data[1].teamsWithScores[0].score).toBe(6.5);   // 2.0 × 3 + 0.5
+    expect(data[1].teamsWithScores[0].multiplier).toBe(3);
+    expect(data[1].bestScore).toBe(6.5);
   });
 
-  it("returns null bestScore when no matches have been played", () => {
-    const data = computeParticipantScores(participants, {}, {}, {});
+  it("returns null bestScore when no matches played", () => {
+    const data = computeParticipantScores(participants, {}, {});
     expect(data[0].bestScore).toBeNull();
   });
 });
@@ -184,19 +142,20 @@ describe("computeParticipantScores", () => {
 // ─── sortLeaderboard ─────────────────────────────────────────────────────────
 
 describe("sortLeaderboard", () => {
-  it("sorts by best single-team score descending, then underdog rank", () => {
+  it("sorts by best score desc; tiebreak favours the bigger underdog", () => {
+    // Canada (30, ×2) Runner-up = 4 × 2 = 8.0
+    // Brazil (6, ×1) Winner     = 5 × 1 = 5.0
+    // Ghana  (73, ×3) R16       = 1 × 3 = 3.0
     const data = computeParticipantScores(
       [
         { name: "A", color: "#fff", teams: [{ name: "Canada", apiName: "Canada", flag: "🇨🇦", rank: 30 }] },
-        { name: "B", color: "#fff", teams: [{ name: "Brazil", apiName: "Brazil", flag: "🇧🇷", rank: 6 }] },
-        { name: "C", color: "#fff", teams: [{ name: "Ghana", apiName: "Ghana", flag: "🇬🇭", rank: 74 }] },
+        { name: "B", color: "#fff", teams: [{ name: "Brazil", apiName: "Brazil", flag: "🇧🇷", rank: 6  }] },
+        { name: "C", color: "#fff", teams: [{ name: "Ghana",  apiName: "Ghana",  flag: "🇬🇭", rank: 73 }] },
       ],
-      { Canada: 4, Brazil: 5, Ghana: 4 },
-      {},
+      { Canada: 4, Brazil: 5, Ghana: 1 },
       {},
     );
-    const leaderboard = sortLeaderboard(data);
-    // Canada: max(0, 4-1)=3.0  Brazil: max(0, 5-4)=1.0  Ghana: max(0, 4-0)=4.0
-    expect(leaderboard.map(p => p.name)).toEqual(["C", "A", "B"]);
+    const lb = sortLeaderboard(data);
+    expect(lb.map(p => p.name)).toEqual(["A", "B", "C"]);
   });
 });
