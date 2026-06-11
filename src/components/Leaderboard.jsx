@@ -1,4 +1,10 @@
 import { getPrizeWinners, STAGE_LABELS, TIERS } from "../utils/scoring.js";
+import { PARTICIPANTS, UNASSIGNED_TEAMS } from "../data/participants.js";
+
+const ALL_TEAMS = [
+  ...PARTICIPANTS.flatMap(p => p.teams),
+  ...UNASSIGNED_TEAMS,
+].sort((a, b) => a.rank - b.rank);
 
 const PRIZE_CONFIG = [
   { key: "winner", icon: "🥇", label: "World Cup Winner", prize: "£50", color: "#c9a227", glow: "#c9a22740" },
@@ -198,7 +204,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
       {/* How it works */}
       <section style={{ padding: "24px 16px 0" }}>
         <div style={{ color: "#3a5070", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>
-          How scoring works
+          How underdog scoring works
         </div>
         <div style={{ background: "#0b1928", border: "1px solid #132035", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.7, color: "#94a3b8" }}>
           <p style={{ marginTop: 0 }}>
@@ -226,14 +232,26 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
           <div style={{ overflowX: "auto", marginBottom: 16 }}>
             <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}>
               <tbody>
-                {TIERS.map(t => (
-                  <tr key={t.label} style={{ borderTop: "1px solid #0d1e30" }}>
-                    <td style={td({ left: true })}>
-                      Rank {t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`}
-                    </td>
-                    <td style={{ ...td(), fontWeight: 700, color: "#c9a227" }}>{t.label}</td>
-                  </tr>
-                ))}
+                {TIERS.map(t => {
+                  const teamsInTier = ALL_TEAMS.filter(team => team.rank >= t.min && team.rank <= t.max);
+                  return (
+                    <tr key={t.label} style={{ borderTop: "1px solid #0d1e30" }}>
+                      <td style={td({ left: true })}>
+                        Rank {t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`}
+                        {teamsInTier.length > 0 && (
+                          <div style={{ marginTop: 4, lineHeight: 1.8 }}>
+                            {teamsInTier.map(team => (
+                              <span key={team.name} title={`${team.name} (#${team.rank})`} style={{ marginRight: 2, fontSize: 15 }}>
+                                {team.flag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                      <td style={{ ...td(), fontWeight: 700, color: "#c9a227", verticalAlign: "top", paddingTop: 9 }}>{t.label}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
