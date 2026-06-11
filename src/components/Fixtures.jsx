@@ -2,8 +2,11 @@ import { useState } from "react";
 
 const STATUS_BADGES = {
   FINISHED: { label: "FT", color: "#3a5070", bg: "#0d1e30" },
+  AWARDED: { label: "FT", color: "#3a5070", bg: "#0d1e30" },
   IN_PLAY: { label: "LIVE", color: "#ef4444", bg: "#1a0505", pulse: true },
   PAUSED: { label: "HT", color: "#f59e0b", bg: "#1a1205" },
+  EXTRA_TIME: { label: "ET", color: "#ef4444", bg: "#1a0505", pulse: true },
+  PENALTY_SHOOTOUT: { label: "PEN", color: "#ef4444", bg: "#1a0505", pulse: true },
   SCHEDULED: { label: "NS", color: "#3a5070", bg: "#0d1e30" },
   TIMED: { label: "NS", color: "#3a5070", bg: "#0d1e30" },
 };
@@ -31,9 +34,9 @@ function FixtureRow({ match, teamToParticipant }) {
   const awayName = match.awayTeam?.name || "TBD";
   const homeP = teamToParticipant[homeName];
   const awayP = teamToParticipant[awayName];
-  const homeScore = match.score?.fullTime?.home;
-  const awayScore = match.score?.fullTime?.away;
-  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
+  const homeScore = match.score?.fullTime?.home ?? match.score?.halfTime?.home;
+  const awayScore = match.score?.fullTime?.away ?? match.score?.halfTime?.away;
+  const isLive = ["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"].includes(match.status);
   const time = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   return (

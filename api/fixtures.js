@@ -27,9 +27,19 @@ export default async function handler(req, res) {
     const data = await response.json();
     const matches = data.matches || [];
 
-    const finished = matches.filter(m => m.status === "FINISHED");
-    const live = matches.filter(m => m.status === "IN_PLAY" || m.status === "PAUSED");
-    const scheduled = matches.filter(m => m.status === "SCHEDULED" || m.status === "TIMED");
+    // Log status distribution to help debug API responses
+    const statusCounts = matches.reduce((acc, m) => {
+      acc[m.status] = (acc[m.status] || 0) + 1;
+      return acc;
+    }, {});
+    console.log("Match statuses from football-data.org:", JSON.stringify(statusCounts));
+
+    const FINISHED_STATUSES = new Set(["FINISHED", "AWARDED"]);
+    const LIVE_STATUSES = new Set(["IN_PLAY", "PAUSED", "EXTRA_TIME", "PENALTY_SHOOTOUT"]);
+
+    const finished = matches.filter(m => FINISHED_STATUSES.has(m.status));
+    const live = matches.filter(m => LIVE_STATUSES.has(m.status));
+    const scheduled = matches.filter(m => !FINISHED_STATUSES.has(m.status) && !LIVE_STATUSES.has(m.status));
 
     return res.status(200).json({ finished, live, scheduled });
   } catch (err) {
