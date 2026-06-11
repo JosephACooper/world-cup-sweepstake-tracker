@@ -150,7 +150,7 @@ export function deriveUpsetBonuses(matches = [], rankLookup = {}) {
 }
 
 // Score per team = max(0, progression) + groupBonus + upsetBonus
-// Participant total = sum of all team scores
+// Participant rank is determined by their single best-scoring team
 export function computeParticipantScores(participants = [], teamFinishes = {}, groupBonuses = {}, upsetBonuses = {}) {
   return participants.map((participant) => {
     const teamsWithScores = participant.teams.map((team) => {
@@ -164,10 +164,8 @@ export function computeParticipantScores(participants = [], teamFinishes = {}, g
     });
 
     const scoredTeams = teamsWithScores.filter((t) => t.score !== null);
-    const totalScore = scoredTeams.length > 0
-      ? scoredTeams.reduce((sum, t) => sum + t.score, 0)
-      : null;
 
+    // Best team: highest score → tiebreak by lowest FIFA rank (biggest underdog) → deepest stage
     const bestTeam = scoredTeams.reduce((best, team) => {
       if (!best) return team;
       if (team.score !== best.score) return team.score > best.score ? team : best;
@@ -175,17 +173,16 @@ export function computeParticipantScores(participants = [], teamFinishes = {}, g
       return (team.actual || 0) > (best.actual || 0) ? team : best;
     }, null);
 
-    return { ...participant, teamsWithScores, totalScore, bestScore: bestTeam?.score ?? null, bestTeam };
+    return { ...participant, teamsWithScores, bestScore: bestTeam?.score ?? null, bestTeam };
   });
 }
 
-// Sort by total score; tiebreak by best individual score, then underdog rank, then stage reached
+// Sort by best single-team score; tiebreak by that team's FIFA rank (underdog), then stage reached
 export function sortLeaderboard(participantData = []) {
   return [...participantData]
-    .filter((p) => p.totalScore !== null)
+    .filter((p) => p.bestScore !== null)
     .sort((a, b) => {
-      if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
-      if ((b.bestScore || 0) !== (a.bestScore || 0)) return (b.bestScore || 0) - (a.bestScore || 0);
+      if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       if ((b.bestTeam?.rank || 0) !== (a.bestTeam?.rank || 0)) return (b.bestTeam?.rank || 0) - (a.bestTeam?.rank || 0);
       return (b.bestTeam?.actual || 0) - (a.bestTeam?.actual || 0);
     });
@@ -208,10 +205,8 @@ export function getPrizeWinners(participantData = [], bracket = {}) {
     thirdPlace = allTeams.find(t => t.apiName === thirdWinnerApiName) ?? null;
   }
 
-  // Best Underdog = participant with highest total score
-  const underdogParticipant = participantData
-    .filter(p => p.totalScore !== null && p.totalScore > 0)
-    .sort((a, b) => b.totalScore - a.totalScore)[0] ?? null;
+  // Best Underdog = top of the leaderboard (highest single-team score)
+  const underdogParticipant = sortLeaderboard(participantData)[0] ?? null;
 
   return {
     winner: winner ? { participant: winner.participant, color: winner.participantColor, team: winner } : null,
@@ -221,7 +216,6 @@ export function getPrizeWinners(participantData = [], bracket = {}) {
       participant: underdogParticipant.name,
       color: underdogParticipant.color,
       team: underdogParticipant.bestTeam,
-      totalScore: underdogParticipant.totalScore,
     } : null,
   };
 }

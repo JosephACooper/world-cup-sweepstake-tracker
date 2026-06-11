@@ -31,11 +31,14 @@ function PrizeCard({ config, prizeData }) {
       {prizeData ? (
         <>
           <div style={{ fontSize: 20, fontWeight: 700, color: "#dde4f0" }}>
-            {config.key === "underdog" ? prizeData.participant : `${prizeData.team?.flag ?? ""} ${prizeData.team?.name ?? ""}`}
+            {prizeData.team?.flag ?? ""} {prizeData.team?.name ?? ""}
           </div>
           <div style={{ color: config.color, fontWeight: 600, marginTop: 4 }}>
-            {config.key === "underdog" ? `${fmt(prizeData.totalScore, { sign: false })} pts` : prizeData.participant}
+            {prizeData.participant}
           </div>
+          {config.key === "underdog" && prizeData.team?.score != null ? (
+            <div style={{ color: "#3a5070", fontSize: 12, marginTop: 4 }}>Score: {fmt(prizeData.team.score, { sign: false })}</div>
+          ) : null}
         </>
       ) : (
         <div style={{ color: "#3a5070", fontSize: 15, fontWeight: 600 }}>TBC</div>
@@ -120,10 +123,10 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontWeight: 700, fontSize: 18, color: participant.totalScore > 0 ? "#10b981" : "#3a5070" }}>
-                  {fmt(participant.totalScore, { sign: false })}
+                <div style={{ fontWeight: 700, fontSize: 18, color: participant.bestScore > 0 ? "#10b981" : "#3a5070" }}>
+                  {fmt(participant.bestScore, { sign: false })}
                 </div>
-                <div style={{ fontSize: 11, color: "#3a5070" }}>total</div>
+                <div style={{ fontSize: 11, color: "#3a5070" }}>best score</div>
               </div>
             </summary>
 
@@ -200,7 +203,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
         </div>
         <div style={{ background: "#0b1928", border: "1px solid #132035", borderRadius: 10, padding: 16, fontSize: 13, lineHeight: 1.7, color: "#94a3b8" }}>
           <p style={{ marginTop: 0 }}>
-            Your score is the <strong style={{ color: "#dde4f0" }}>sum of all four of your teams</strong>. Only positive contributions count — if a big team underperforms, they contribute 0 rather than dragging your total down.
+            Your position is decided by your <strong style={{ color: "#dde4f0" }}>single best-performing team</strong>. If two people tie on score, the bigger underdog (lower FIFA rank) wins. Only positive scores count — a big team underperforming scores 0, not a negative.
           </p>
 
           <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>1. Progression</p>

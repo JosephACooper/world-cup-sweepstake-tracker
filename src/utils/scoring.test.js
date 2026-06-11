@@ -166,25 +166,25 @@ describe("computeParticipantScores", () => {
     expect(france.groupBonus).toBe(0.5);
     expect(france.upsetBonus).toBe(0.5);
     expect(france.score).toBe(1.0);
-    expect(data[0].totalScore).toBe(1.0);
+    expect(data[0].bestScore).toBe(1.0);
 
     // Saudi Arabia QF (2.0), expected 0.0 → progression +2.0 + 0.5 group bonus → 2.5
     const ksa = data[1].teamsWithScores[0];
     expect(ksa.progression).toBe(2.0);
     expect(ksa.score).toBe(2.5);
-    expect(data[1].totalScore).toBe(2.5);
+    expect(data[1].bestScore).toBe(2.5);
   });
 
-  it("returns null totalScore when no matches have been played", () => {
+  it("returns null bestScore when no matches have been played", () => {
     const data = computeParticipantScores(participants, {}, {}, {});
-    expect(data[0].totalScore).toBeNull();
+    expect(data[0].bestScore).toBeNull();
   });
 });
 
 // ─── sortLeaderboard ─────────────────────────────────────────────────────────
 
 describe("sortLeaderboard", () => {
-  it("sorts by totalScore descending, then bestScore, then underdog rank", () => {
+  it("sorts by best single-team score descending, then underdog rank", () => {
     const data = computeParticipantScores(
       [
         { name: "A", color: "#fff", teams: [{ name: "Canada", apiName: "Canada", flag: "🇨🇦", rank: 30 }] },

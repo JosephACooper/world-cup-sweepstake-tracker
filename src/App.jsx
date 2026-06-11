@@ -71,7 +71,7 @@ export default function App() {
   const upsetBonuses = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
   const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, groupBonuses, upsetBonuses), [teamFinishes, groupBonuses, upsetBonuses]);
   const leaderboard = useMemo(() => sortLeaderboard(participantData), [participantData]);
-  const waiting = useMemo(() => participantData.filter(p => p.totalScore === null), [participantData]);
+  const waiting = useMemo(() => participantData.filter(p => p.bestScore === null), [participantData]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#07111e", color: "#dde4f0", fontFamily: "system-ui, sans-serif" }}>
