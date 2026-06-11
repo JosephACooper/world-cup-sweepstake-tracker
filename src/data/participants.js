@@ -25,7 +25,7 @@ export const PARTICIPANTS = [
     teams: [
       { name: "France",       apiName: "France",       flag: "🇫🇷", rank: 3  },
       { name: "Austria",      apiName: "Austria",      flag: "🇦🇹", rank: 24 },
-      { name: "Congo DR",      apiName: "DR Congo",     flag: "🇨🇩", rank: 46 },
+      { name: "Congo DR",      apiName: "Congo DR",     flag: "🇨🇩", rank: 46 },
       { name: "Netherlands",  apiName: "Netherlands",  flag: "🇳🇱", rank: 8  },
     ],
   },
@@ -113,8 +113,8 @@ export const PARTICIPANTS = [
 
 export const UNASSIGNED_TEAMS = [
   { name: "Haiti",            apiName: "Haiti",                  flag: "🇭🇹", rank: 83 },
-  { name: "Cabo Verde",       apiName: "Cabo Verde",             flag: "🇨🇻", rank: 67 },
-  { name: "Bosnia & Herz.",   apiName: "Bosnia and Herzegovina", flag: "🇧🇦", rank: 64 },
+  { name: "Cape Verde Islands", apiName: "Cape Verde Islands",   flag: "🇨🇻", rank: 67 },
+  { name: "Bosnia-Herzegovina", apiName: "Bosnia-Herzegovina",  flag: "🇧🇦", rank: 64 },
   { name: "Panama",           apiName: "Panama",                 flag: "🇵🇦", rank: 34 },
 ];
 
