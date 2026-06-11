@@ -79,7 +79,7 @@ export default function App() {
             FIFA World Cup 2026 · Live Sweepstake
           </div>
           <h1 style={{ margin: "4px 0 8px", fontSize: 20, fontWeight: 800, color: "#dde4f0" }}>
-            Underdog Score Tracker
+            Moonstone World Cup Sweepstake Tracker
           </h1>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <div style={{
