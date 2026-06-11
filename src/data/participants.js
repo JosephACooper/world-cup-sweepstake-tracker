@@ -35,7 +35,7 @@ export const PARTICIPANTS = [
     teams: [
       { name: "Ecuador", apiName: "Ecuador", flag: "🇪🇨", rank: 23 },
       { name: "England", apiName: "England", flag: "🏴", rank: 4 },
-      { name: "United States", apiName: "USA", flag: "🇺🇸", rank: 16 },
+      { name: "United States", apiName: "United States", flag: "🇺🇸", rank: 16 },
       { name: "Morocco", apiName: "Morocco", flag: "🇲🇦", rank: 8 },
     ],
   },
@@ -110,3 +110,14 @@ export const PARTICIPANTS = [
     ],
   },
 ];
+
+export const UNASSIGNED_TEAMS = [
+  { name: "Haiti", apiName: "Haiti", flag: "🇭🇹" },
+  { name: "Cabo Verde", apiName: "Cabo Verde", flag: "🇨🇻" },
+  { name: "Bosnia & Herz.", apiName: "Bosnia and Herzegovina", flag: "🇧🇦" },
+  { name: "Panama", apiName: "Panama", flag: "🇵🇦" },
+];
+
+export const teamToParticipant = Object.fromEntries(
+  PARTICIPANTS.flatMap(p => p.teams.map(t => [t.apiName, { name: p.name, color: p.color }]))
+);
