@@ -26,31 +26,16 @@ export function getExpected(rank) {
   return 0.0;
 }
 
-export function roundToPoints(roundString = "") {
-  const round = roundString.toLowerCase();
-
-  if (round.includes("group")) return 0;
-  if (round.includes("round of 32") || round.includes("1/16") || round.includes("32")) return 0.5;
-  if (round.includes("round of 16") || round.includes("1/8") || round.includes("16")) return 1;
-  if (round.includes("quarter")) return 2;
-  if (round.includes("semi")) return 3;
-  if (round.includes("3rd") || round.includes("third")) return 3;
-  if (round.includes("final")) return 4;
-
-  return null;
-}
-
-function getRound(fixture) {
-  return fixture?.league?.round || fixture?.fixture?.round || "";
-}
-
-function getStatus(fixture) {
-  return fixture?.fixture?.status?.short || "";
-}
-
-function isFinalRound(round) {
-  const value = round.toLowerCase();
-  return value.includes("final") && !value.includes("semi") && !value.includes("3rd") && !value.includes("third");
+function stageToPoints(stage) {
+  switch (stage) {
+    case "GROUP_STAGE": return 0;
+    case "ROUND_OF_32": return 0.5;
+    case "ROUND_OF_16": return 1;
+    case "QUARTER_FINALS": return 2;
+    case "SEMI_FINALS": return 3;
+    case "THIRD_PLACE": return 3;
+    default: return null;
+  }
 }
 
 function setHighest(finishes, teamName, points) {
@@ -60,36 +45,41 @@ function setHighest(finishes, teamName, points) {
   }
 }
 
-export function deriveTeamFinishes(fixtures = []) {
-  return fixtures.reduce((finishes, fixture) => {
-    const round = getRound(fixture);
-    const points = roundToPoints(round);
-    const status = getStatus(fixture);
-    const home = fixture?.teams?.home;
-    const away = fixture?.teams?.away;
+export function deriveTeamFinishes(matches = []) {
+  return matches.reduce((finishes, match) => {
+    if (match.status !== "FINISHED") return finishes;
 
-    if (!home?.name || !away?.name || points === null) return finishes;
-    if (status && !["FT", "AET", "PEN"].includes(status)) return finishes;
+    const stage = match.stage;
+    const homeName = match.homeTeam?.name;
+    const awayName = match.awayTeam?.name;
 
-    if (points === 0) {
-      setHighest(finishes, home.name, 0);
-      setHighest(finishes, away.name, 0);
+    if (!homeName || !awayName) return finishes;
+
+    if (stage === "GROUP_STAGE") {
+      setHighest(finishes, homeName, 0);
+      setHighest(finishes, awayName, 0);
       return finishes;
     }
 
-    const homeWon = home.winner === true;
-    const awayWon = away.winner === true;
+    const winner = match.score?.winner;
 
-    if (!homeWon && !awayWon) return finishes;
-
-    if (isFinalRound(round)) {
-      setHighest(finishes, homeWon ? home.name : away.name, 5);
-      setHighest(finishes, homeWon ? away.name : home.name, 4);
+    if (stage === "FINAL") {
+      if (winner === "HOME_TEAM") {
+        setHighest(finishes, homeName, 5);
+        setHighest(finishes, awayName, 4);
+      } else if (winner === "AWAY_TEAM") {
+        setHighest(finishes, awayName, 5);
+        setHighest(finishes, homeName, 4);
+      }
       return finishes;
     }
 
-    setHighest(finishes, homeWon ? home.name : away.name, points);
-    setHighest(finishes, homeWon ? away.name : home.name, points);
+    const pts = stageToPoints(stage);
+    if (pts === null) return finishes;
+
+    // Both teams get credit for reaching this round; winner gets updated in next round
+    setHighest(finishes, homeName, pts);
+    setHighest(finishes, awayName, pts);
 
     return finishes;
   }, {});
@@ -101,16 +91,10 @@ export function computeParticipantScores(participants = [], teamFinishes = {}) {
       const actual = teamFinishes[team.apiName] ?? null;
       const expected = getExpected(team.rank);
       const score = actual === null ? null : actual - expected;
-
-      return {
-        ...team,
-        actual,
-        expected,
-        score,
-      };
+      return { ...team, actual, expected, score };
     });
 
-    const scoredTeams = teamsWithScores.filter((team) => team.score !== null);
+    const scoredTeams = teamsWithScores.filter((t) => t.score !== null);
     const bestTeam = scoredTeams.reduce((best, team) => {
       if (!best) return team;
       if (team.score !== best.score) return team.score > best.score ? team : best;
@@ -118,21 +102,48 @@ export function computeParticipantScores(participants = [], teamFinishes = {}) {
       return team.actual > best.actual ? team : best;
     }, null);
 
-    return {
-      ...participant,
-      teamsWithScores,
-      bestScore: bestTeam ? bestTeam.score : null,
-      bestTeam,
-    };
+    return { ...participant, teamsWithScores, bestScore: bestTeam?.score ?? null, bestTeam };
   });
 }
 
 export function sortLeaderboard(participantData = []) {
   return [...participantData]
-    .filter((participant) => participant.bestScore !== null)
+    .filter((p) => p.bestScore !== null)
     .sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
       if (b.bestTeam.rank !== a.bestTeam.rank) return b.bestTeam.rank - a.bestTeam.rank;
       return b.bestTeam.actual - a.bestTeam.actual;
     });
+}
+
+export function getPrizeWinners(participantData = [], bracket = {}) {
+  const allTeams = participantData.flatMap(p =>
+    p.teamsWithScores.map(t => ({ ...t, participant: p.name, participantColor: p.color }))
+  );
+
+  const winner = allTeams.find(t => t.actual === 5) ?? null;
+  const runnerUp = allTeams.find(t => t.actual === 4) ?? null;
+
+  let thirdPlace = null;
+  const thirdMatch = (bracket.third || []).find(m => m.status === "FINISHED" && m.score?.winner);
+  if (thirdMatch) {
+    const thirdWinnerApiName = thirdMatch.score.winner === "HOME_TEAM"
+      ? thirdMatch.homeTeam?.name
+      : thirdMatch.awayTeam?.name;
+    thirdPlace = allTeams.find(t => t.apiName === thirdWinnerApiName) ?? null;
+  }
+
+  const underdogTeam = allTeams
+    .filter(t => t.score !== null)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return b.rank - a.rank;
+    })[0] ?? null;
+
+  return {
+    winner: winner ? { participant: winner.participant, color: winner.participantColor, team: winner } : null,
+    runnerUp: runnerUp ? { participant: runnerUp.participant, color: runnerUp.participantColor, team: runnerUp } : null,
+    thirdPlace: thirdPlace ? { participant: thirdPlace.participant, color: thirdPlace.participantColor, team: thirdPlace } : null,
+    underdog: underdogTeam ? { participant: underdogTeam.participant, color: underdogTeam.participantColor, team: underdogTeam } : null,
+  };
 }
