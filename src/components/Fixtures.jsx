@@ -74,10 +74,12 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
   const [filter, setFilter] = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState("");
 
-  const allMatches = [...(fixtures.finished || []), ...(fixtures.live || [])];
+  const allMatches = [
+    ...(fixtures.live || []),
+    ...(fixtures.finished || []),
+    ...(fixtures.scheduled || []),
+  ].sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
-  // Get all matches (we only have finished/live from the API; show those)
-  // Group by date
   const filtered = allMatches.filter(m => {
     if (filter === "today") {
       const today = new Date().toDateString();

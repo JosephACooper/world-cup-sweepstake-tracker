@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.FOOTBALL_DATA_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "FOOTBALL_DATA_API_KEY is not configured", finished: [], live: [] });
+    return res.status(500).json({ error: "FOOTBALL_DATA_API_KEY is not configured", finished: [], live: [], scheduled: [] });
   }
 
   try {
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      return res.status(500).json({ error: err.message || `API error ${response.status}`, finished: [], live: [] });
+      return res.status(500).json({ error: err.message || `API error ${response.status}`, finished: [], live: [], scheduled: [] });
     }
 
     const data = await response.json();
@@ -29,9 +29,10 @@ export default async function handler(req, res) {
 
     const finished = matches.filter(m => m.status === "FINISHED");
     const live = matches.filter(m => m.status === "IN_PLAY" || m.status === "PAUSED");
+    const scheduled = matches.filter(m => m.status === "SCHEDULED" || m.status === "TIMED");
 
-    return res.status(200).json({ finished, live });
+    return res.status(200).json({ finished, live, scheduled });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Unable to fetch fixtures", finished: [], live: [] });
+    return res.status(500).json({ error: err.message || "Unable to fetch fixtures", finished: [], live: [], scheduled: [] });
   }
 }

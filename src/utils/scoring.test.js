@@ -3,18 +3,17 @@ import {
   computeParticipantScores,
   deriveTeamFinishes,
   getExpected,
-  roundToPoints,
   sortLeaderboard,
 } from "./scoring.js";
 
-function fixture(round, homeName, awayName, homeWon, status = "FT") {
+function fixture(stage, homeName, awayName, homeWon, status = "FINISHED") {
+  const winner = homeWon === null ? null : (homeWon ? "HOME_TEAM" : "AWAY_TEAM");
   return {
-    fixture: { status: { short: status } },
-    league: { round },
-    teams: {
-      home: { name: homeName, winner: homeWon },
-      away: { name: awayName, winner: homeWon === null ? null : !homeWon },
-    },
+    status,
+    stage,
+    homeTeam: { name: homeName },
+    awayTeam: { name: awayName },
+    score: { winner },
   };
 }
 
@@ -32,24 +31,12 @@ describe("getExpected", () => {
   });
 });
 
-describe("roundToPoints", () => {
-  it("matches API-Football round strings case-insensitively and partially", () => {
-    expect(roundToPoints("World Cup - Group Stage - 1")).toBe(0);
-    expect(roundToPoints("World Cup - Round of 32")).toBe(0.5);
-    expect(roundToPoints("World Cup - Round of 16")).toBe(1);
-    expect(roundToPoints("World Cup - Quarter-finals")).toBe(2);
-    expect(roundToPoints("World Cup - Semi-finals")).toBe(3);
-    expect(roundToPoints("World Cup - 3rd Place Final")).toBe(3);
-    expect(roundToPoints("World Cup - Final")).toBe(4);
-  });
-});
-
 describe("deriveTeamFinishes", () => {
   it("keeps the highest points seen for teams across rounds", () => {
     const finishes = deriveTeamFinishes([
-      fixture("Group Stage - 1", "Canada", "Brazil", false),
-      fixture("Round of 32", "Canada", "Spain", true),
-      fixture("Round of 16", "Canada", "France", false),
+      fixture("GROUP_STAGE", "Canada", "Brazil", false),
+      fixture("ROUND_OF_32", "Canada", "Spain", true),
+      fixture("ROUND_OF_16", "Canada", "France", false),
     ]);
 
     expect(finishes.Canada).toBe(1);
@@ -60,7 +47,7 @@ describe("deriveTeamFinishes", () => {
 
   it("sets final winner to 5 and loser to 4", () => {
     const finishes = deriveTeamFinishes([
-      fixture("Final", "Argentina", "England", true, "PEN"),
+      fixture("FINAL", "Argentina", "England", true),
     ]);
 
     expect(finishes.Argentina).toBe(5);
@@ -69,7 +56,7 @@ describe("deriveTeamFinishes", () => {
 
   it("ignores unfinished knockout fixtures", () => {
     const finishes = deriveTeamFinishes([
-      fixture("Quarter-finals", "Japan", "Germany", null, "NS"),
+      fixture("QUARTER_FINALS", "Japan", "Germany", null, "SCHEDULED"),
     ]);
 
     expect(finishes).toEqual({});

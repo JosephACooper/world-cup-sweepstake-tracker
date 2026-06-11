@@ -84,14 +84,14 @@ export default function Bracket({ bracket, teamToParticipant }) {
   const hasAnyKnockout = ROUND_ORDER.some(r => (bracket[r] || []).length > 0);
   if (!hasAnyKnockout) {
     return (
-      <main style={{ padding: 16, color: "#3a5070", textAlign: "center", paddingTop: 48 }}>
+      <div style={{ padding: 16, color: "#3a5070", textAlign: "center", paddingTop: 32 }}>
         Knockout bracket not yet available. Check back after the group stage.
-      </main>
+      </div>
     );
   }
 
   return (
-    <main style={{ paddingBottom: 60, overflowX: "auto" }}>
+    <div style={{ paddingBottom: 16, overflowX: "auto" }}>
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start", padding: 16, minWidth: "max-content" }}>
         {ROUND_ORDER.map(round => {
           const matches = bracket[round] || [];
@@ -116,6 +116,6 @@ export default function Bracket({ bracket, teamToParticipant }) {
           );
         })}
       </div>
-    </main>
+    </div>
   );
 }

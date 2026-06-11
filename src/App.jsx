@@ -1,28 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PARTICIPANTS, UNASSIGNED_TEAMS, teamToParticipant } from "./data/participants.js";
+import { PARTICIPANTS, teamToParticipant } from "./data/participants.js";
 import { computeParticipantScores, deriveTeamFinishes, sortLeaderboard } from "./utils/scoring.js";
 import LiveTicker from "./components/LiveTicker.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
-import Groups from "./components/Groups.jsx";
-import Bracket from "./components/Bracket.jsx";
+import Tournament from "./components/Tournament.jsx";
 import Fixtures from "./components/Fixtures.jsx";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 const TABS = [
-  { id: "sweepstake", label: "Sweepstake" },
-  { id: "groups", label: "Groups" },
-  { id: "bracket", label: "Bracket" },
   { id: "fixtures", label: "Fixtures" },
+  { id: "tournament", label: "Tournament" },
+  { id: "underdogs", label: "Underdogs" },
 ];
 
 export default function App() {
-  const [fixtures, setFixtures] = useState({ finished: [], live: [] });
+  const [fixtures, setFixtures] = useState({ finished: [], live: [], scheduled: [] });
   const [standings, setStandings] = useState([]);
   const [bracket, setBracket] = useState({ r32: [], r16: [], qf: [], sf: [], third: [], final: [] });
   const [lastFetched, setLastFetched] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("sweepstake");
+  const [activeTab, setActiveTab] = useState("fixtures");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -125,22 +123,19 @@ export default function App() {
         </nav>
       </header>
 
-      {activeTab === "sweepstake" && (
+      {activeTab === "fixtures" && (
+        <Fixtures fixtures={fixtures} teamToParticipant={teamToParticipant} participants={PARTICIPANTS} />
+      )}
+      {activeTab === "tournament" && (
+        <Tournament standings={standings} bracket={bracket} teamToParticipant={teamToParticipant} />
+      )}
+      {activeTab === "underdogs" && (
         <Leaderboard
           participantData={participantData}
           bracket={bracket}
           leaderboard={leaderboard}
           waiting={waiting}
         />
-      )}
-      {activeTab === "groups" && (
-        <Groups standings={standings} teamToParticipant={teamToParticipant} />
-      )}
-      {activeTab === "bracket" && (
-        <Bracket bracket={bracket} teamToParticipant={teamToParticipant} />
-      )}
-      {activeTab === "fixtures" && (
-        <Fixtures fixtures={fixtures} teamToParticipant={teamToParticipant} participants={PARTICIPANTS} />
       )}
     </div>
   );
