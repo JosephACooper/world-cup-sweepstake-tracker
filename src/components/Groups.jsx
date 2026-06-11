@@ -1,14 +1,14 @@
 export default function Groups({ standings, teamToParticipant }) {
   if (!standings || standings.length === 0) {
     return (
-      <main style={{ padding: 16, color: "#3a5070", textAlign: "center", paddingTop: 48 }}>
+      <div style={{ padding: 16, color: "#3a5070", textAlign: "center", paddingTop: 48 }}>
         Group standings not available yet.
-      </main>
+      </div>
     );
   }
 
   return (
-    <main style={{ padding: "16px", paddingBottom: 60 }}>
+    <div style={{ padding: "16px", paddingBottom: 16 }}>
       <div style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
@@ -18,7 +18,7 @@ export default function Groups({ standings, teamToParticipant }) {
           <GroupTable key={group.group} group={group} teamToParticipant={teamToParticipant} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }
 

@@ -1,40 +1,37 @@
 export const STAGE_LABELS = {
-  0: "Group Stage",
+  0:   "Group Stage",
   0.5: "Round of 32",
-  1: "Round of 16",
-  2: "Quarter-final",
-  3: "Semi-final",
-  4: "Runner-up",
-  5: "Winner",
+  1:   "Round of 16",
+  2:   "Quarter-final",
+  3:   "Semi-final",
+  4:   "Runner-up",
+  5:   "Winner",
 };
 
-export const STAGE_CLASSES = {
-  0: "stage-group",
-  0.5: "stage-r32",
-  1: "stage-r16",
-  2: "stage-qf",
-  3: "stage-sf",
-  4: "stage-runner-up",
-  5: "stage-winner",
-};
+// Rank multiplier tiers (FIFA rankings, June 2026)
+// Score = stage points × multiplier + upset bonus
+export const TIERS = [
+  { label: "×1",   min: 1,  max: 10,  multiplier: 1   },
+  { label: "×1.5", min: 11, max: 20,  multiplier: 1.5 },
+  { label: "×2",   min: 21, max: 35,  multiplier: 2   },
+  { label: "×2.5", min: 36, max: 50,  multiplier: 2.5 },
+  { label: "×3",   min: 51, max: Infinity, multiplier: 3 },
+];
 
-export function getExpected(rank) {
-  if (rank <= 8) return 4.0;
-  if (rank <= 16) return 3.0;
-  if (rank <= 24) return 2.0;
-  if (rank <= 32) return 1.0;
-  return 0.0;
+export function getMultiplier(rank) {
+  const tier = TIERS.find(t => rank >= t.min && rank <= t.max);
+  return tier ? tier.multiplier : 1;
 }
 
 function stageToPoints(stage) {
   switch (stage) {
-    case "GROUP_STAGE": return 0;
-    case "ROUND_OF_32": return 0.5;
-    case "ROUND_OF_16": return 1;
+    case "GROUP_STAGE":   return 0;
+    case "ROUND_OF_32":   return 0.5;
+    case "ROUND_OF_16":   return 1;
     case "QUARTER_FINALS": return 2;
-    case "SEMI_FINALS": return 3;
-    case "THIRD_PLACE": return 3;
-    default: return null;
+    case "SEMI_FINALS":   return 3;
+    case "THIRD_PLACE":   return 3;
+    default:              return null;
   }
 }
 
@@ -45,6 +42,7 @@ function setHighest(finishes, teamName, points) {
   }
 }
 
+// Returns { [apiName]: stagePoints } — highest stage each team has reached
 export function deriveTeamFinishes(matches = []) {
   return matches.reduce((finishes, match) => {
     if (match.status !== "FINISHED") return finishes;
@@ -52,7 +50,6 @@ export function deriveTeamFinishes(matches = []) {
     const stage = match.stage;
     const homeName = match.homeTeam?.name;
     const awayName = match.awayTeam?.name;
-
     if (!homeName || !awayName) return finishes;
 
     if (stage === "GROUP_STAGE") {
@@ -77,42 +74,94 @@ export function deriveTeamFinishes(matches = []) {
     const pts = stageToPoints(stage);
     if (pts === null) return finishes;
 
-    // Both teams get credit for reaching this round; winner gets updated in next round
     setHighest(finishes, homeName, pts);
     setHighest(finishes, awayName, pts);
-
     return finishes;
   }, {});
 }
 
-export function computeParticipantScores(participants = [], teamFinishes = {}) {
+// Build a rank lookup from participants + optional extra teams (e.g. unassigned)
+export function buildRankLookup(participants = [], extraTeams = []) {
+  const lookup = {};
+  for (const p of participants) {
+    for (const t of p.teams) {
+      if (t.apiName && t.rank) lookup[t.apiName] = t.rank;
+    }
+  }
+  for (const t of extraTeams) {
+    if (t.apiName && t.rank) lookup[t.apiName] = t.rank;
+  }
+  return lookup;
+}
+
+// Upset bonus: beat a team ranked 15+ places above you = +0.5 per win
+const UPSET_THRESHOLD = 15;
+const UPSET_BONUS_PER_WIN = 0.5;
+
+export function deriveUpsetBonuses(matches = [], rankLookup = {}) {
+  return matches.reduce((bonuses, match) => {
+    if (match.status !== "FINISHED") return bonuses;
+
+    const winner = match.score?.winner;
+    if (!winner) return bonuses;
+
+    const homeName = match.homeTeam?.name;
+    const awayName = match.awayTeam?.name;
+    if (!homeName || !awayName) return bonuses;
+
+    const homeRank = rankLookup[homeName];
+    const awayRank = rankLookup[awayName];
+    if (!homeRank || !awayRank) return bonuses;
+
+    let winnerName, winnerRank, loserRank;
+    if (winner === "HOME_TEAM") {
+      winnerName = homeName; winnerRank = homeRank; loserRank = awayRank;
+    } else if (winner === "AWAY_TEAM") {
+      winnerName = awayName; winnerRank = awayRank; loserRank = homeRank;
+    } else {
+      return bonuses;
+    }
+
+    if (winnerRank - loserRank >= UPSET_THRESHOLD) {
+      bonuses[winnerName] = (bonuses[winnerName] || 0) + UPSET_BONUS_PER_WIN;
+    }
+    return bonuses;
+  }, {});
+}
+
+// Score = stagePoints × multiplier + upsetBonus
+export function computeParticipantScores(participants = [], teamFinishes = {}, upsetBonuses = {}) {
   return participants.map((participant) => {
     const teamsWithScores = participant.teams.map((team) => {
-      const actual = teamFinishes[team.apiName] ?? null;
-      const expected = getExpected(team.rank);
-      const score = actual === null ? null : actual - expected;
-      return { ...team, actual, expected, score };
+      const actual     = teamFinishes[team.apiName] ?? null;
+      const multiplier = getMultiplier(team.rank);
+      const upsetBonus = upsetBonuses[team.apiName] ?? 0;
+      const score      = actual === null ? null : actual * multiplier + upsetBonus;
+      return { ...team, actual, multiplier, upsetBonus, score };
     });
 
     const scoredTeams = teamsWithScores.filter((t) => t.score !== null);
+
+    // Best team: highest score → tiebreak lowest FIFA rank (biggest underdog) → deepest stage
     const bestTeam = scoredTeams.reduce((best, team) => {
       if (!best) return team;
       if (team.score !== best.score) return team.score > best.score ? team : best;
       if (team.rank !== best.rank) return team.rank > best.rank ? team : best;
-      return team.actual > best.actual ? team : best;
+      return (team.actual || 0) > (best.actual || 0) ? team : best;
     }, null);
 
     return { ...participant, teamsWithScores, bestScore: bestTeam?.score ?? null, bestTeam };
   });
 }
 
+// Sort by best single-team score; tiebreak by that team's rank (underdog first), then stage
 export function sortLeaderboard(participantData = []) {
   return [...participantData]
     .filter((p) => p.bestScore !== null)
     .sort((a, b) => {
       if (b.bestScore !== a.bestScore) return b.bestScore - a.bestScore;
-      if (b.bestTeam.rank !== a.bestTeam.rank) return b.bestTeam.rank - a.bestTeam.rank;
-      return b.bestTeam.actual - a.bestTeam.actual;
+      if ((b.bestTeam?.rank || 0) !== (a.bestTeam?.rank || 0)) return (b.bestTeam?.rank || 0) - (a.bestTeam?.rank || 0);
+      return (b.bestTeam?.actual || 0) - (a.bestTeam?.actual || 0);
     });
 }
 
@@ -121,29 +170,28 @@ export function getPrizeWinners(participantData = [], bracket = {}) {
     p.teamsWithScores.map(t => ({ ...t, participant: p.name, participantColor: p.color }))
   );
 
-  const winner = allTeams.find(t => t.actual === 5) ?? null;
+  const winner   = allTeams.find(t => t.actual === 5) ?? null;
   const runnerUp = allTeams.find(t => t.actual === 4) ?? null;
 
   let thirdPlace = null;
   const thirdMatch = (bracket.third || []).find(m => m.status === "FINISHED" && m.score?.winner);
   if (thirdMatch) {
-    const thirdWinnerApiName = thirdMatch.score.winner === "HOME_TEAM"
+    const name = thirdMatch.score.winner === "HOME_TEAM"
       ? thirdMatch.homeTeam?.name
       : thirdMatch.awayTeam?.name;
-    thirdPlace = allTeams.find(t => t.apiName === thirdWinnerApiName) ?? null;
+    thirdPlace = allTeams.find(t => t.apiName === name) ?? null;
   }
 
-  const underdogTeam = allTeams
-    .filter(t => t.score !== null)
-    .sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return b.rank - a.rank;
-    })[0] ?? null;
+  const underdogParticipant = sortLeaderboard(participantData)[0] ?? null;
 
   return {
-    winner: winner ? { participant: winner.participant, color: winner.participantColor, team: winner } : null,
-    runnerUp: runnerUp ? { participant: runnerUp.participant, color: runnerUp.participantColor, team: runnerUp } : null,
+    winner:     winner     ? { participant: winner.participant,     color: winner.participantColor,     team: winner     } : null,
+    runnerUp:   runnerUp   ? { participant: runnerUp.participant,   color: runnerUp.participantColor,   team: runnerUp   } : null,
     thirdPlace: thirdPlace ? { participant: thirdPlace.participant, color: thirdPlace.participantColor, team: thirdPlace } : null,
-    underdog: underdogTeam ? { participant: underdogTeam.participant, color: underdogTeam.participantColor, team: underdogTeam } : null,
+    underdog:   underdogParticipant ? {
+      participant: underdogParticipant.name,
+      color:       underdogParticipant.color,
+      team:        underdogParticipant.bestTeam,
+    } : null,
   };
 }
