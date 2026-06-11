@@ -1,0 +1,23 @@
+{
+  "name": "world-cup-sweepstake-tracker",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "dev:vite": "vite",
+    "test": "vitest run",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8",
+    "vercel": "^39.2.6"
+  }
+}
