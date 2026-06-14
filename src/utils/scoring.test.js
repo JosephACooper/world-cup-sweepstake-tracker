@@ -9,7 +9,7 @@ import {
 } from "./scoring.js";
 
 function match(stage, homeName, awayName, homeWon, status = "FINISHED") {
-  const winner = homeWon === null ? null : (homeWon ? "HOME_TEAM" : "AWAY_TEAM");
+  const winner = homeWon === "DRAW" ? "DRAW" : homeWon === null ? null : (homeWon ? "HOME_TEAM" : "AWAY_TEAM");
   return { status, stage, homeTeam: { name: homeName }, awayTeam: { name: awayName }, score: { winner } };
 }
 
@@ -73,17 +73,17 @@ describe("buildRankLookup", () => {
 // ─── deriveUpsetBonuses ───────────────────────────────────────────────────────
 
 describe("deriveUpsetBonuses", () => {
-  it("awards 0.5 for beating a team ranked 15+ places above", () => {
+  it("awards 1 for beating a team ranked 10+ places above", () => {
     const lookup = { Brazil: 6, "Saudi Arabia": 60 };
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Brazil", "Saudi Arabia", false)],
       lookup,
     );
-    expect(bonuses["Saudi Arabia"]).toBe(0.5);
+    expect(bonuses["Saudi Arabia"]).toBe(1);
     expect(bonuses.Brazil).toBeUndefined();
   });
 
-  it("does not award bonus when rank gap is below 15", () => {
+  it("does not award bonus when rank gap is below 10", () => {
     const lookup = { Germany: 10, Croatia: 11 };
     const bonuses = deriveUpsetBonuses(
       [match("ROUND_OF_16", "Germany", "Croatia", false)],
@@ -95,10 +95,40 @@ describe("deriveUpsetBonuses", () => {
   it("accumulates bonuses across multiple upsets", () => {
     const lookup = { France: 3, Japan: 18 };
     const bonuses = deriveUpsetBonuses([
-      match("GROUP_STAGE", "France", "Japan", false),   // 18-3=15 ≥ 15 ✓
-      match("ROUND_OF_16", "France", "Japan", false),   // +0.5 again
+      match("GROUP_STAGE", "France", "Japan", false),   // 18-3=15 ≥ 10 ✓
+      match("ROUND_OF_16", "France", "Japan", false),   // +1 again
     ], lookup);
-    expect(bonuses.Japan).toBe(1.0);
+    expect(bonuses.Japan).toBe(2.0);
+  });
+
+  it("awards 0.5 to the underdog on a draw against a team ranked 10+ places above", () => {
+    const lookup = { Spain: 7, Morocco: 26 };
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Spain", "Morocco", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Morocco).toBe(0.5);
+    expect(bonuses.Spain).toBeUndefined();
+  });
+
+  it("does not award draw bonus when rank gap is below 10", () => {
+    const lookup = { Germany: 10, Croatia: 11 };
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Germany", "Croatia", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Croatia).toBeUndefined();
+    expect(bonuses.Germany).toBeUndefined();
+  });
+
+  it("awards draw bonus to the home underdog when home rank is higher", () => {
+    const lookup = { Morocco: 26, Spain: 7 };
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Morocco", "Spain", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Morocco).toBe(0.5);
+    expect(bonuses.Spain).toBeUndefined();
   });
 
   it("skips matches where either team rank is unknown", () => {

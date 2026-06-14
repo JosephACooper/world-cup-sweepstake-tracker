@@ -258,7 +258,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
 
           <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>Upset bonus</p>
           <p style={{ marginTop: 0, marginBottom: 0 }}>
-            Beat a team ranked 15+ places above you: <strong style={{ color: "#10b981" }}>+0.5 per win</strong>.
+            Against a team ranked 10+ places above you: <strong style={{ color: "#10b981" }}>+1 per win</strong>, <strong style={{ color: "#10b981" }}>+0.5 per draw</strong>.
             Applies in group stage and all knockout rounds.
           </p>
         </div>
