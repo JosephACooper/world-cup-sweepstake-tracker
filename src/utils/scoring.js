@@ -94,17 +94,16 @@ export function buildRankLookup(participants = [], extraTeams = []) {
   return lookup;
 }
 
-// Upset bonus: beat a team ranked 15+ places above you = +0.5 per win
-const UPSET_THRESHOLD = 15;
-const UPSET_BONUS_PER_WIN = 0.5;
+// Upset bonus: rank gap ≥ 10 → +1 per win, +0.5 per draw (underdog only)
+const UPSET_THRESHOLD = 10;
+const UPSET_BONUS_WIN = 1;
+const UPSET_BONUS_DRAW = 0.5;
 
 export function deriveUpsetBonuses(matches = [], rankLookup = {}) {
   return matches.reduce((bonuses, match) => {
     if (match.status !== "FINISHED") return bonuses;
 
     const winner = match.score?.winner;
-    if (!winner) return bonuses;
-
     const homeName = match.homeTeam?.name;
     const awayName = match.awayTeam?.name;
     if (!homeName || !awayName) return bonuses;
@@ -112,6 +111,17 @@ export function deriveUpsetBonuses(matches = [], rankLookup = {}) {
     const homeRank = rankLookup[homeName];
     const awayRank = rankLookup[awayName];
     if (!homeRank || !awayRank) return bonuses;
+
+    if (winner === "DRAW") {
+      const rankGap = Math.abs(homeRank - awayRank);
+      if (rankGap >= UPSET_THRESHOLD) {
+        const underdogName = homeRank > awayRank ? homeName : awayName;
+        bonuses[underdogName] = (bonuses[underdogName] || 0) + UPSET_BONUS_DRAW;
+      }
+      return bonuses;
+    }
+
+    if (!winner) return bonuses;
 
     let winnerName, winnerRank, loserRank;
     if (winner === "HOME_TEAM") {
@@ -123,7 +133,7 @@ export function deriveUpsetBonuses(matches = [], rankLookup = {}) {
     }
 
     if (winnerRank - loserRank >= UPSET_THRESHOLD) {
-      bonuses[winnerName] = (bonuses[winnerName] || 0) + UPSET_BONUS_PER_WIN;
+      bonuses[winnerName] = (bonuses[winnerName] || 0) + UPSET_BONUS_WIN;
     }
     return bonuses;
   }, {});
