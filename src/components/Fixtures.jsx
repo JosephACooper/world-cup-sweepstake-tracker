@@ -1,84 +1,106 @@
 import { useState } from "react";
 
-const STATUS_CONFIG = {
-  FINISHED: { label: "FT", cls: "finished" },
-  IN_PLAY:  { label: "Live", cls: "live", dot: true },
-  PAUSED:   { label: "HT", cls: "halftime" },
-  SCHEDULED:{ label: "NS", cls: "scheduled" },
-  TIMED:    { label: "NS", cls: "scheduled" },
+const STAGE_LABELS = {
+  GROUP_STAGE: "Group Stage",
+  LAST_32: "Round of 32",
+  LAST_16: "Round of 16",
+  QUARTER_FINALS: "Quarter-final",
+  SEMI_FINALS: "Semi-final",
+  THIRD_PLACE: "3rd Place",
+  FINAL: "Final",
 };
 
-function StatusChip({ status }) {
-  const cfg = STATUS_CONFIG[status] || { label: status, cls: "scheduled" };
-  return (
-    <span className={`status-chip ${cfg.cls}`}>
-      {cfg.dot && <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />}
-      {cfg.label}
-    </span>
-  );
-}
-
-function FixtureRow({ match, teamToParticipant }) {
+function MatchCard({ match, teamToParticipant }) {
   const homeName = match.homeTeam?.name || "TBD";
   const awayName = match.awayTeam?.name || "TBD";
   const homeP = teamToParticipant[homeName];
   const awayP = teamToParticipant[awayName];
-  const homeScore = match.score?.fullTime?.home;
-  const awayScore = match.score?.fullTime?.away;
+  const hScore = match.score?.fullTime?.home;
+  const aScore = match.score?.fullTime?.away;
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
   const isFinished = match.status === "FINISHED";
-  const time = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const homeWon = isFinished && match.score?.winner === "HOME_TEAM";
   const awayWon = isFinished && match.score?.winner === "AWAY_TEAM";
+  const hasScore = hScore !== null && hScore !== undefined;
+
+  const stageLabel = STAGE_LABELS[match.stage] ?? match.stage ?? "Group Stage";
+  const time = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const statusText = isFinished
+    ? "Full Time"
+    : match.status === "PAUSED"
+    ? "Half Time"
+    : isLive
+    ? null
+    : time;
 
   return (
-    <div className="fixture-row">
-      <div className={`fixture-time${isLive ? " live" : ""}`}>
-        {isLive && match.minute ? `${match.minute}'` : time}
+    <div className="match-card-wrap">
+      {/* Eyebrow */}
+      <div className="match-eyebrow">
+        <span>{stageLabel}</span>
+        {isLive ? (
+          <span className="live-label">
+            <span className="live-dot" />
+            {match.minute ? `${match.minute}'` : "Live"}
+          </span>
+        ) : null}
       </div>
 
-      <div className="fixture-team home">
-        <div>
-          <div className="fixture-team-name" style={{ fontWeight: homeWon ? 700 : 500, opacity: awayWon ? 0.5 : 1 }}>
-            {match.homeTeam?.crest && (
-              <img src={match.homeTeam.crest} alt="" style={{ width: 15, height: 15, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} />
-            )}
-            {homeName}
-          </div>
+      {/* Score row */}
+      <div className="match-body">
+        {/* Home side */}
+        <div className="match-side">
+          {match.homeTeam?.crest ? (
+            <img src={match.homeTeam.crest} alt="" className="match-crest" />
+          ) : (
+            <span className="match-flag">{homeP?.flag ?? "🏳️"}</span>
+          )}
+          {hasScore ? (
+            <span className={`match-score${awayWon ? " dim" : ""}`}>{hScore}</span>
+          ) : (
+            <span className="match-score pending">—</span>
+          )}
+        </div>
+
+        {/* Centre */}
+        <div className="match-center">
+          {isLive && match.minute ? (
+            <span className="match-minute">{match.minute}'</span>
+          ) : (
+            <span className="match-status-text">{statusText}</span>
+          )}
+        </div>
+
+        {/* Away side */}
+        <div className="match-side away">
+          {hasScore ? (
+            <span className={`match-score${homeWon ? " dim" : ""}`}>{aScore}</span>
+          ) : (
+            <span className="match-score pending">—</span>
+          )}
+          {match.awayTeam?.crest ? (
+            <img src={match.awayTeam.crest} alt="" className="match-crest" />
+          ) : (
+            <span className="match-flag">{awayP?.flag ?? "🏳️"}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Team names row */}
+      <div className="match-names">
+        <div className="match-team-name" style={{ opacity: awayWon ? .45 : 1 }}>
+          {homeName}
           {homeP && (
-            <div className="fixture-participant" style={{ color: homeP.color, textAlign: "right" }}>
-              {homeP.name}
-            </div>
+            <span className="match-participant" style={{ color: homeP.color }}>{homeP.name}</span>
           )}
         </div>
-      </div>
-
-      <div>
-        {homeScore !== null && homeScore !== undefined ? (
-          <div className="fixture-score">{homeScore}–{awayScore}</div>
-        ) : (
-          <div className="fixture-score pending">vs</div>
-        )}
-      </div>
-
-      <div className="fixture-team away">
-        <div>
-          <div className="fixture-team-name" style={{ fontWeight: awayWon ? 700 : 500, opacity: homeWon ? 0.5 : 1 }}>
-            {match.awayTeam?.crest && (
-              <img src={match.awayTeam.crest} alt="" style={{ width: 15, height: 15, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} />
-            )}
-            {awayName}
-          </div>
+        <div className="match-divider" />
+        <div className="match-team-name away" style={{ opacity: homeWon ? .45 : 1 }}>
+          {awayName}
           {awayP && (
-            <div className="fixture-participant" style={{ color: awayP.color }}>
-              {awayP.name}
-            </div>
+            <span className="match-participant" style={{ color: awayP.color }}>{awayP.name}</span>
           )}
         </div>
-      </div>
-
-      <div className="fixture-status">
-        <StatusChip status={match.status} />
       </div>
     </div>
   );
@@ -114,19 +136,17 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
     return acc;
   }, {});
 
+  const FILTERS = [
+    { id: "all", label: "All" },
+    { id: "today", label: "Today" },
+    { id: "mine", label: "My Teams" },
+  ];
+
   return (
     <main style={{ paddingBottom: 60 }}>
-      <div className="fixture-filter-bar">
-        {[
-          { id: "all", label: "All" },
-          { id: "today", label: "Today" },
-          { id: "mine", label: "My Teams" },
-        ].map(f => (
-          <button
-            key={f.id}
-            className={`filter-pill${filter === f.id ? " active" : ""}`}
-            onClick={() => setFilter(f.id)}
-          >
+      <div className="filter-bar">
+        {FILTERS.map(f => (
+          <button key={f.id} className={`pill${filter === f.id ? " active" : ""}`} onClick={() => setFilter(f.id)}>
             {f.label}
           </button>
         ))}
@@ -137,9 +157,7 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
             onChange={e => setSelectedParticipant(e.target.value)}
           >
             <option value="">Select participant…</option>
-            {participants.map(p => (
-              <option key={p.name} value={p.name}>{p.name}</option>
-            ))}
+            {participants.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
         )}
       </div>
@@ -150,12 +168,10 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
 
       {Object.entries(byDate).map(([date, matches]) => (
         <section key={date}>
-          <div className="date-header">{date}</div>
-          <div className="fixture-group">
-            {matches.map(m => (
-              <FixtureRow key={m.id} match={m} teamToParticipant={teamToParticipant} />
-            ))}
-          </div>
+          <div className="date-label">{date}</div>
+          {matches.map(m => (
+            <MatchCard key={m.id} match={m} teamToParticipant={teamToParticipant} />
+          ))}
         </section>
       ))}
     </main>
