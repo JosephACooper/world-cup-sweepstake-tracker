@@ -1,26 +1,18 @@
 import { useState } from "react";
 
-const STATUS_BADGES = {
-  FINISHED: { label: "FT", color: "#3a5070", bg: "#0d1e30" },
-  IN_PLAY: { label: "LIVE", color: "#ef4444", bg: "#1a0505", pulse: true },
-  PAUSED: { label: "HT", color: "#f59e0b", bg: "#1a1205" },
-  SCHEDULED: { label: "NS", color: "#3a5070", bg: "#0d1e30" },
-  TIMED: { label: "NS", color: "#3a5070", bg: "#0d1e30" },
+const STATUS_CONFIG = {
+  FINISHED: { label: "FT", cls: "finished" },
+  IN_PLAY:  { label: "Live", cls: "live", dot: true },
+  PAUSED:   { label: "HT", cls: "halftime" },
+  SCHEDULED:{ label: "NS", cls: "scheduled" },
+  TIMED:    { label: "NS", cls: "scheduled" },
 };
 
-function StatusBadge({ status }) {
-  const cfg = STATUS_BADGES[status] || { label: status, color: "#3a5070", bg: "#0d1e30" };
+function StatusChip({ status }) {
+  const cfg = STATUS_CONFIG[status] || { label: status, cls: "scheduled" };
   return (
-    <span style={{
-      padding: "2px 7px",
-      borderRadius: 4,
-      fontSize: 11,
-      fontWeight: 700,
-      color: cfg.color,
-      background: cfg.bg,
-      border: `1px solid ${cfg.color}30`,
-      ...(cfg.pulse ? { animation: "pulse 1.5s infinite" } : {}),
-    }}>
+    <span className={`status-chip ${cfg.cls}`}>
+      {cfg.dot && <span style={{ width: 5, height: 5, borderRadius: "50%", background: "currentColor", display: "inline-block" }} />}
       {cfg.label}
     </span>
   );
@@ -34,38 +26,60 @@ function FixtureRow({ match, teamToParticipant }) {
   const homeScore = match.score?.fullTime?.home;
   const awayScore = match.score?.fullTime?.away;
   const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
+  const isFinished = match.status === "FINISHED";
   const time = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const homeWon = isFinished && match.score?.winner === "HOME_TEAM";
+  const awayWon = isFinished && match.score?.winner === "AWAY_TEAM";
 
   return (
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "40px 1fr auto 1fr auto",
-      gap: 8,
-      alignItems: "center",
-      padding: "10px 16px",
-      borderBottom: "1px solid #0d1e30",
-    }}>
-      <div style={{ color: "#3a5070", fontSize: 11, textAlign: "center" }}>
-        {isLive && match.minute ? <span style={{ color: "#ef4444", fontWeight: 700 }}>{match.minute}'</span> : time}
+    <div className="fixture-row">
+      <div className={`fixture-time${isLive ? " live" : ""}`}>
+        {isLive && match.minute ? `${match.minute}'` : time}
       </div>
-      <div style={{ textAlign: "right" }}>
-        <div style={{ color: "#dde4f0", fontSize: 13, fontWeight: 500 }}>
-          {match.homeTeam?.crest ? <img src={match.homeTeam.crest} alt="" style={{ width: 16, height: 16, objectFit: "contain", marginRight: 4, verticalAlign: "middle" }} /> : null}
-          {homeName}
+
+      <div className="fixture-team home">
+        <div>
+          <div className="fixture-team-name" style={{ fontWeight: homeWon ? 700 : 500, opacity: awayWon ? 0.5 : 1 }}>
+            {match.homeTeam?.crest && (
+              <img src={match.homeTeam.crest} alt="" style={{ width: 15, height: 15, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} />
+            )}
+            {homeName}
+          </div>
+          {homeP && (
+            <div className="fixture-participant" style={{ color: homeP.color, textAlign: "right" }}>
+              {homeP.name}
+            </div>
+          )}
         </div>
-        {homeP ? <div style={{ color: homeP.color, fontSize: 11 }}>{homeP.name}</div> : null}
       </div>
-      <div style={{ textAlign: "center", fontWeight: 700, fontSize: 15, color: "#dde4f0", minWidth: 50 }}>
-        {homeScore !== null && homeScore !== undefined ? `${homeScore}–${awayScore}` : "vs"}
+
+      <div>
+        {homeScore !== null && homeScore !== undefined ? (
+          <div className="fixture-score">{homeScore}–{awayScore}</div>
+        ) : (
+          <div className="fixture-score pending">vs</div>
+        )}
       </div>
-      <div style={{ textAlign: "left" }}>
-        <div style={{ color: "#dde4f0", fontSize: 13, fontWeight: 500 }}>
-          {match.awayTeam?.crest ? <img src={match.awayTeam.crest} alt="" style={{ width: 16, height: 16, objectFit: "contain", marginRight: 4, verticalAlign: "middle" }} /> : null}
-          {awayName}
+
+      <div className="fixture-team away">
+        <div>
+          <div className="fixture-team-name" style={{ fontWeight: awayWon ? 700 : 500, opacity: homeWon ? 0.5 : 1 }}>
+            {match.awayTeam?.crest && (
+              <img src={match.awayTeam.crest} alt="" style={{ width: 15, height: 15, objectFit: "contain", marginRight: 5, verticalAlign: "middle" }} />
+            )}
+            {awayName}
+          </div>
+          {awayP && (
+            <div className="fixture-participant" style={{ color: awayP.color }}>
+              {awayP.name}
+            </div>
+          )}
         </div>
-        {awayP ? <div style={{ color: awayP.color, fontSize: 11 }}>{awayP.name}</div> : null}
       </div>
-      <div><StatusBadge status={match.status} /></div>
+
+      <div className="fixture-status">
+        <StatusChip status={match.status} />
+      </div>
     </div>
   );
 }
@@ -82,86 +96,66 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
 
   const filtered = allMatches.filter(m => {
     if (filter === "today") {
-      const today = new Date().toDateString();
-      return new Date(m.utcDate).toDateString() === today;
+      return new Date(m.utcDate).toDateString() === new Date().toDateString();
     }
     if (filter === "mine" && selectedParticipant) {
       const p = participants.find(p => p.name === selectedParticipant);
       if (!p) return true;
-      const teamNames = p.teams.map(t => t.apiName);
-      return teamNames.includes(m.homeTeam?.name) || teamNames.includes(m.awayTeam?.name);
+      const names = p.teams.map(t => t.apiName);
+      return names.includes(m.homeTeam?.name) || names.includes(m.awayTeam?.name);
     }
     return true;
   });
 
   const byDate = filtered.reduce((acc, m) => {
-    const date = new Date(m.utcDate).toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(m);
+    const d = new Date(m.utcDate).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+    if (!acc[d]) acc[d] = [];
+    acc[d].push(m);
     return acc;
   }, {});
 
   return (
     <main style={{ paddingBottom: 60 }}>
-      <style>{`@keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }`}</style>
-      <div style={{ padding: "12px 16px", display: "flex", gap: 8, flexWrap: "wrap", borderBottom: "1px solid #132035" }}>
-        {["all","today","mine"].map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            padding: "6px 14px",
-            borderRadius: 20,
-            border: `1px solid ${filter === f ? "#c9a227" : "#132035"}`,
-            background: filter === f ? "#c9a22720" : "transparent",
-            color: filter === f ? "#c9a227" : "#3a5070",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}>
-            {f === "all" ? "All" : f === "today" ? "Today" : "My Teams"}
+      <div className="fixture-filter-bar">
+        {[
+          { id: "all", label: "All" },
+          { id: "today", label: "Today" },
+          { id: "mine", label: "My Teams" },
+        ].map(f => (
+          <button
+            key={f.id}
+            className={`filter-pill${filter === f.id ? " active" : ""}`}
+            onClick={() => setFilter(f.id)}
+          >
+            {f.label}
           </button>
         ))}
-        {filter === "mine" ? (
+        {filter === "mine" && (
           <select
+            className="filter-select"
             value={selectedParticipant}
             onChange={e => setSelectedParticipant(e.target.value)}
-            style={{
-              background: "#0b1928",
-              color: "#dde4f0",
-              border: "1px solid #132035",
-              borderRadius: 8,
-              padding: "6px 10px",
-              fontSize: 12,
-            }}
           >
-            <option value="">Select name…</option>
-            {participants.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            <option value="">Select participant…</option>
+            {participants.map(p => (
+              <option key={p.name} value={p.name}>{p.name}</option>
+            ))}
           </select>
-        ) : null}
+        )}
       </div>
 
-      {Object.keys(byDate).length === 0 ? (
-        <div style={{ color: "#3a5070", textAlign: "center", padding: "48px 16px" }}>
-          No matches to show.
-        </div>
-      ) : null}
+      {Object.keys(byDate).length === 0 && (
+        <div className="empty-state">No matches to show.</div>
+      )}
 
       {Object.entries(byDate).map(([date, matches]) => (
         <section key={date}>
-          <div style={{
-            padding: "10px 16px",
-            color: "#3a5070",
-            fontSize: 12,
-            fontWeight: 700,
-            letterSpacing: "0.06em",
-            textTransform: "uppercase",
-            background: "#070e18",
-            borderBottom: "1px solid #132035",
-            borderTop: "1px solid #132035",
-          }}>
-            {date}
+          <div className="date-header">{date}</div>
+          <div className="fixture-group">
+            {matches.map(m => (
+              <FixtureRow key={m.id} match={m} teamToParticipant={teamToParticipant} />
+            ))}
           </div>
-          {matches.map(m => (
-            <FixtureRow key={m.id} match={m} teamToParticipant={teamToParticipant} />
-          ))}
         </section>
       ))}
     </main>

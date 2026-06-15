@@ -16,7 +16,7 @@ const REFRESH_INTERVAL = 5 * 60 * 1000;
 const TABS = [
   { id: "fixtures", label: "Fixtures" },
   { id: "tournament", label: "Tournament" },
-  { id: "underdogs", label: "Leaderboard" },
+  { id: "leaderboard", label: "Leaderboard" },
 ];
 
 export default function App() {
@@ -71,80 +71,65 @@ export default function App() {
   const leaderboard = useMemo(() => sortLeaderboard(participantData), [participantData]);
   const waiting = useMemo(() => participantData.filter(p => p.bestScore === null), [participantData]);
 
+  const hasLive = (fixtures.live || []).length > 0;
+
+  const statusClass = error ? "status-error" : loading ? "status-loading" : lastFetched ? "status-live" : "";
+  const statusText = loading
+    ? "Updating…"
+    : error
+    ? error
+    : lastFetched
+    ? `Updated ${lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+    : "Connecting…";
+
   return (
-    <div style={{ minHeight: "100vh", background: "#07111e", color: "#dde4f0", fontFamily: "system-ui, sans-serif" }}>
-      <header style={{ background: "#0b1928", borderBottom: "1px solid #132035", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ padding: "12px 16px 0" }}>
-          <div style={{ fontSize: 11, color: "#3a5070", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            FIFA World Cup 2026 · Live Sweepstake
-          </div>
-          <h1 style={{ margin: "4px 0 8px", fontSize: 20, fontWeight: 800, color: "#dde4f0" }}>
-            Moonstone World Cup Sweepstake Tracker
-          </h1>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <div style={{
-              width: 8, height: 8, borderRadius: "50%",
-              background: error ? "#ef4444" : loading ? "#f59e0b" : lastFetched ? "#10b981" : "#3a5070",
-            }} />
-            <span style={{ fontSize: 12, color: "#3a5070" }}>
-              {loading ? "Fetching…" : error ? `Error: ${error}` : lastFetched ? `Updated ${lastFetched.toLocaleTimeString()}` : "Connecting…"}
-            </span>
-            <button
-              onClick={fetchAll}
-              disabled={loading}
-              style={{
-                marginLeft: "auto",
-                padding: "4px 12px",
-                borderRadius: 6,
-                border: "1px solid #132035",
-                background: "transparent",
-                color: "#3a5070",
-                fontSize: 12,
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              Refresh
+    <div className="app-shell">
+      <header className="site-header">
+        <div className="header-inner">
+          <div className="header-eyebrow">FIFA World Cup 2026 · Sweepstake</div>
+          <h1 className="header-title">Moonstone Sweepstake</h1>
+          <div className="header-status">
+            <div className={`status-dot ${statusClass}`} />
+            <span className="status-text">{statusText}</span>
+            <button className="refresh-button" onClick={fetchAll} disabled={loading}>
+              {loading ? "…" : "Refresh"}
             </button>
           </div>
         </div>
-        <LiveTicker matches={fixtures.live || []} />
-        <nav style={{ display: "flex", borderTop: "1px solid #132035" }}>
-          {TABS.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                flex: 1,
-                padding: "10px 4px",
-                border: "none",
-                background: "transparent",
-                color: activeTab === tab.id ? "#c9a227" : "#3a5070",
-                fontWeight: activeTab === tab.id ? 700 : 500,
-                fontSize: 13,
-                cursor: "pointer",
-                borderBottom: `2px solid ${activeTab === tab.id ? "#c9a227" : "transparent"}`,
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+
+        {hasLive && <LiveTicker matches={fixtures.live} />}
+
+        <div className="tab-bar">
+          <div className="segmented-control">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                className={activeTab === tab.id ? "active" : ""}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </header>
 
-      {activeTab === "fixtures" && (
-        <Fixtures fixtures={fixtures} teamToParticipant={teamToParticipant} participants={PARTICIPANTS} />
-      )}
-      {activeTab === "tournament" && (
-        <Tournament standings={standings} bracket={bracket} teamToParticipant={teamToParticipant} />
-      )}
-      {activeTab === "underdogs" && (
-        <Leaderboard
-          participantData={participantData}
-          bracket={bracket}
-          leaderboard={leaderboard}
-          waiting={waiting}
-        />
-      )}
+      <div className="content">
+        {activeTab === "fixtures" && (
+          <Fixtures fixtures={fixtures} teamToParticipant={teamToParticipant} participants={PARTICIPANTS} />
+        )}
+        {activeTab === "tournament" && (
+          <Tournament standings={standings} bracket={bracket} teamToParticipant={teamToParticipant} />
+        )}
+        {activeTab === "leaderboard" && (
+          <Leaderboard
+            participantData={participantData}
+            bracket={bracket}
+            leaderboard={leaderboard}
+            waiting={waiting}
+          />
+        )}
+      </div>
     </div>
   );
 }
