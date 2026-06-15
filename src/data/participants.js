@@ -17,6 +17,7 @@ export const PARTICIPANTS = [
       { name: "Korea Republic",  apiName: "South Korea",  flag: "🇰🇷", rank: 25 },
       { name: "Sweden",          apiName: "Sweden",       flag: "🇸🇪", rank: 38 },
       { name: "Egypt",           apiName: "Egypt",        flag: "🇪🇬", rank: 29 },
+      { name: "Cape Verde Islands", apiName: "Cape Verde Islands", flag: "🇨🇻", rank: 67 },
     ],
   },
   {
@@ -53,10 +54,11 @@ export const PARTICIPANTS = [
     name: "Tom",
     color: "#f97316",
     teams: [
-      { name: "Senegal",   apiName: "Senegal",  flag: "🇸🇳", rank: 15 },
-      { name: "Australia", apiName: "Australia", flag: "🇦🇺", rank: 27 },
-      { name: "Turkey",    apiName: "Turkey",   flag: "🇹🇷", rank: 22 },
-      { name: "Curaçao",   apiName: "Curaçao",  flag: "🇨🇼", rank: 82 },
+      { name: "Senegal",             apiName: "Senegal",            flag: "🇸🇳", rank: 15 },
+      { name: "Australia",           apiName: "Australia",          flag: "🇦🇺", rank: 27 },
+      { name: "Turkey",              apiName: "Turkey",             flag: "🇹🇷", rank: 22 },
+      { name: "Curaçao",             apiName: "Curaçao",            flag: "🇨🇼", rank: 82 },
+      { name: "Bosnia-Herzegovina",  apiName: "Bosnia-Herzegovina", flag: "🇧🇦", rank: 64 },
     ],
   },
   {
@@ -97,6 +99,7 @@ export const PARTICIPANTS = [
       { name: "Iran",          apiName: "Iran",          flag: "🇮🇷", rank: 20 },
       { name: "South Africa",  apiName: "South Africa",  flag: "🇿🇦", rank: 61 },
       { name: "Mexico",        apiName: "Mexico",        flag: "🇲🇽", rank: 13 },
+      { name: "Haiti",         apiName: "Haiti",         flag: "🇭🇹", rank: 83 },
     ],
   },
   {
@@ -107,16 +110,12 @@ export const PARTICIPANTS = [
       { name: "Canada",         apiName: "Canada",        flag: "🇨🇦", rank: 30 },
       { name: "Croatia",        apiName: "Croatia",       flag: "🇭🇷", rank: 11 },
       { name: "Switzerland",    apiName: "Switzerland",   flag: "🇨🇭", rank: 19 },
+      { name: "Panama",         apiName: "Panama",        flag: "🇵🇦", rank: 34 },
     ],
   },
 ];
 
-export const UNASSIGNED_TEAMS = [
-  { name: "Haiti",            apiName: "Haiti",                  flag: "🇭🇹", rank: 83 },
-  { name: "Cape Verde Islands", apiName: "Cape Verde Islands",   flag: "🇨🇻", rank: 67 },
-  { name: "Bosnia-Herzegovina", apiName: "Bosnia-Herzegovina",  flag: "🇧🇦", rank: 64 },
-  { name: "Panama",           apiName: "Panama",                 flag: "🇵🇦", rank: 34 },
-];
+export const UNASSIGNED_TEAMS = [];
 
 export const teamToParticipant = Object.fromEntries(
   PARTICIPANTS.flatMap(p => p.teams.map(t => [t.apiName, { name: p.name, color: p.color }]))
