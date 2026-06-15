@@ -13,6 +13,7 @@ import Tournament from "./components/Tournament.jsx";
 import Fixtures from "./components/Fixtures.jsx";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
+
 const TABS = [
   { id: "fixtures",    label: "Fixtures" },
   { id: "tournament",  label: "Tournament" },
@@ -20,13 +21,13 @@ const TABS = [
 ];
 
 export default function App() {
-  const [fixtures, setFixtures]   = useState({ finished: [], live: [], scheduled: [] });
-  const [standings, setStandings] = useState([]);
-  const [bracket, setBracket]     = useState({ r32: [], r16: [], qf: [], sf: [], third: [], final: [] });
+  const [fixtures, setFixtures]       = useState({ finished: [], live: [], scheduled: [] });
+  const [standings, setStandings]     = useState([]);
+  const [bracket, setBracket]         = useState({ r32: [], r16: [], qf: [], sf: [], third: [], final: [] });
   const [lastFetched, setLastFetched] = useState(null);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState(null);
-  const [activeTab, setActiveTab] = useState("fixtures");
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState(null);
+  const [activeTab, setActiveTab]     = useState("fixtures");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
@@ -41,7 +42,7 @@ export default function App() {
         fRes.json(), sRes.json(), bRes.json(),
       ]);
       if (fRes.ok) setFixtures(fData);
-      else setError(fData?.error || "Failed to load fixtures");
+      else setError(fData?.error || "Failed to load");
       if (sRes.ok) setStandings(sData);
       if (bRes.ok) setBracket(bData);
       setLastFetched(new Date());
@@ -58,26 +59,29 @@ export default function App() {
     return () => window.clearInterval(t);
   }, [fetchAll]);
 
-  const rankLookup     = useMemo(() => buildRankLookup(PARTICIPANTS, UNASSIGNED_TEAMS), []);
-  const teamFinishes   = useMemo(() => deriveTeamFinishes(fixtures.finished || []), [fixtures.finished]);
-  const upsetBonuses   = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
+  const rankLookup      = useMemo(() => buildRankLookup(PARTICIPANTS, UNASSIGNED_TEAMS), []);
+  const teamFinishes    = useMemo(() => deriveTeamFinishes(fixtures.finished || []), [fixtures.finished]);
+  const upsetBonuses    = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
   const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, upsetBonuses), [teamFinishes, upsetBonuses]);
-  const leaderboard    = useMemo(() => sortLeaderboard(participantData), [participantData]);
-  const waiting        = useMemo(() => participantData.filter(p => p.bestScore === null), [participantData]);
+  const leaderboard     = useMemo(() => sortLeaderboard(participantData), [participantData]);
+  const waiting         = useMemo(() => participantData.filter(p => p.bestScore === null), [participantData]);
 
-  const statusCls = error ? "status-error" : loading ? "status-loading" : lastFetched ? "status-live" : "";
-  const statusTxt = loading ? "Updating…"
-    : error ? error
+  const statusCls = error ? "s-error" : loading ? "s-loading" : lastFetched ? "s-live" : "";
+  const statusTxt = loading   ? "Updating…"
+    : error       ? "Error"
     : lastFetched ? `Updated ${lastFetched.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
     : "Connecting…";
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <header className="site-header">
-        <div className="header-inner">
-          <div className="header-eyebrow">FIFA World Cup 2026 · Sweepstake</div>
-          <h1 className="header-title">Moonstone Sweepstake</h1>
-          <div className="header-status">
+    <div style={{ minHeight: "100vh" }}>
+      {/* Nav bar */}
+      <header className="nav-bar">
+        <div className="nav-inner">
+          <div className="nav-title-block">
+            <div className="nav-eyebrow">FIFA World Cup 2026</div>
+            <h1 className="nav-title">Moonstone Sweepstake</h1>
+          </div>
+          <div className="nav-status">
             <div className={`status-dot ${statusCls}`} />
             <span className="status-text">{statusTxt}</span>
             <button className="refresh-btn" onClick={fetchAll} disabled={loading}>
@@ -85,25 +89,11 @@ export default function App() {
             </button>
           </div>
         </div>
-
         {(fixtures.live || []).length > 0 && <LiveTicker matches={fixtures.live} />}
-
-        <div className="tab-bar">
-          <div className="seg">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                className={activeTab === t.id ? "active" : ""}
-                onClick={() => setActiveTab(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </header>
 
-      <div className="content">
+      {/* Page content */}
+      <div className="page">
         {activeTab === "fixtures" && (
           <Fixtures fixtures={fixtures} teamToParticipant={teamToParticipant} participants={PARTICIPANTS} />
         )}
@@ -119,6 +109,19 @@ export default function App() {
           />
         )}
       </div>
+
+      {/* Floating bottom tab bar */}
+      <nav className="tab-bar">
+        {TABS.map(t => (
+          <button
+            key={t.id}
+            className={`tab-btn${activeTab === t.id ? " active" : ""}`}
+            onClick={() => setActiveTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

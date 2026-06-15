@@ -1,105 +1,97 @@
 import { useState } from "react";
 
-const STAGE_LABELS = {
-  GROUP_STAGE: "Group Stage",
-  LAST_32: "Round of 32",
-  LAST_16: "Round of 16",
-  QUARTER_FINALS: "Quarter-final",
-  SEMI_FINALS: "Semi-final",
-  THIRD_PLACE: "3rd Place",
-  FINAL: "Final",
+const STAGE_MAP = {
+  GROUP_STAGE:     "Group Stage",
+  LAST_32:         "Round of 32",
+  LAST_16:         "Round of 16",
+  QUARTER_FINALS:  "Quarter-final",
+  SEMI_FINALS:     "Semi-final",
+  THIRD_PLACE:     "3rd Place Play-off",
+  FINAL:           "Final",
 };
 
+function CrestBadge({ crest, flag, participant }) {
+  return (
+    <div className="crest-badge">
+      {crest
+        ? <img src={crest} alt="" />
+        : <span className="flag-emoji">{flag ?? "🏳️"}</span>
+      }
+    </div>
+  );
+}
+
 function MatchCard({ match, teamToParticipant }) {
-  const homeName = match.homeTeam?.name || "TBD";
-  const awayName = match.awayTeam?.name || "TBD";
-  const homeP = teamToParticipant[homeName];
-  const awayP = teamToParticipant[awayName];
+  const hName  = match.homeTeam?.name || "TBD";
+  const aName  = match.awayTeam?.name || "TBD";
+  const hP     = teamToParticipant[hName];
+  const aP     = teamToParticipant[aName];
   const hScore = match.score?.fullTime?.home;
   const aScore = match.score?.fullTime?.away;
-  const isLive = match.status === "IN_PLAY" || match.status === "PAUSED";
-  const isFinished = match.status === "FINISHED";
-  const homeWon = isFinished && match.score?.winner === "HOME_TEAM";
-  const awayWon = isFinished && match.score?.winner === "AWAY_TEAM";
+  const finished = match.status === "FINISHED";
+  const live     = match.status === "IN_PLAY" || match.status === "PAUSED";
+  const hWon   = finished && match.score?.winner === "HOME_TEAM";
+  const aWon   = finished && match.score?.winner === "AWAY_TEAM";
   const hasScore = hScore !== null && hScore !== undefined;
+  const stage  = STAGE_MAP[match.stage] ?? (match.stage ?? "Group Stage");
+  const time   = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const stageLabel = STAGE_LABELS[match.stage] ?? match.stage ?? "Group Stage";
-  const time = new Date(match.utcDate).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  const statusText = isFinished
+  const statusLabel = finished
     ? "Full Time"
     : match.status === "PAUSED"
     ? "Half Time"
-    : isLive
-    ? null
-    : time;
+    : null;
 
   return (
-    <div className="match-card-wrap">
+    <div className="match-card">
       {/* Eyebrow */}
       <div className="match-eyebrow">
-        <span>{stageLabel}</span>
-        {isLive ? (
-          <span className="live-label">
-            <span className="live-dot" />
-            {match.minute ? `${match.minute}'` : "Live"}
-          </span>
-        ) : null}
+        <span>{stage}</span>
+        {live
+          ? <span className="match-live-badge"><span className="live-dot" />{match.minute ? `${match.minute}'` : "Live"}</span>
+          : !finished && <span>{time}</span>
+        }
       </div>
 
       {/* Score row */}
-      <div className="match-body">
-        {/* Home side */}
-        <div className="match-side">
-          {match.homeTeam?.crest ? (
-            <img src={match.homeTeam.crest} alt="" className="match-crest" />
-          ) : (
-            <span className="match-flag">{homeP?.flag ?? "🏳️"}</span>
-          )}
-          {hasScore ? (
-            <span className={`match-score${awayWon ? " dim" : ""}`}>{hScore}</span>
-          ) : (
-            <span className="match-score pending">—</span>
-          )}
+      <div className="match-score-grid">
+        {/* Home */}
+        <div className="match-side-home">
+          <CrestBadge crest={match.homeTeam?.crest} flag={hP?.flag} />
+          <span className={`score-num${!hasScore ? " ns" : aWon ? " loser" : ""}`}>
+            {hasScore ? hScore : "—"}
+          </span>
         </div>
 
-        {/* Centre */}
+        {/* Center */}
         <div className="match-center">
-          {isLive && match.minute ? (
-            <span className="match-minute">{match.minute}'</span>
-          ) : (
-            <span className="match-status-text">{statusText}</span>
-          )}
+          {live && match.minute
+            ? <span className="match-live-min">{match.minute}'</span>
+            : statusLabel
+            ? <span className="match-status-txt">{statusLabel}</span>
+            : <span className="match-status-txt">{time}</span>
+          }
         </div>
 
-        {/* Away side */}
-        <div className="match-side away">
-          {hasScore ? (
-            <span className={`match-score${homeWon ? " dim" : ""}`}>{aScore}</span>
-          ) : (
-            <span className="match-score pending">—</span>
-          )}
-          {match.awayTeam?.crest ? (
-            <img src={match.awayTeam.crest} alt="" className="match-crest" />
-          ) : (
-            <span className="match-flag">{awayP?.flag ?? "🏳️"}</span>
-          )}
+        {/* Away */}
+        <div className="match-side-away">
+          <span className={`score-num${!hasScore ? " ns" : hWon ? " loser" : ""}`}>
+            {hasScore ? aScore : "—"}
+          </span>
+          <CrestBadge crest={match.awayTeam?.crest} flag={aP?.flag} />
         </div>
       </div>
 
-      {/* Team names row */}
-      <div className="match-names">
-        <div className="match-team-name" style={{ opacity: awayWon ? .45 : 1 }}>
-          {homeName}
-          {homeP && (
-            <span className="match-participant" style={{ color: homeP.color }}>{homeP.name}</span>
-          )}
+      {/* Team names */}
+      <div className="match-names-grid">
+        <div className={`match-team-txt${aWon ? " loser" : ""}`}>
+          {hName}
+          {hP && <span className="participant-tag" style={{ color: hP.color }}>{hP.name}</span>}
         </div>
-        <div className="match-divider" />
-        <div className="match-team-name away" style={{ opacity: homeWon ? .45 : 1 }}>
-          {awayName}
-          {awayP && (
-            <span className="match-participant" style={{ color: awayP.color }}>{awayP.name}</span>
-          )}
+        <div className="match-names-center" />
+        <div className={`match-team-txt away${hWon ? " loser" : ""}`}>
+          {aName}
+          {aP && <span className="participant-tag" style={{ color: aP.color }}>{aP.name}</span>}
         </div>
       </div>
     </div>
@@ -107,19 +99,17 @@ function MatchCard({ match, teamToParticipant }) {
 }
 
 export default function Fixtures({ fixtures, teamToParticipant, participants }) {
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter]                     = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState("");
 
   const allMatches = [
-    ...(fixtures.live || []),
+    ...(fixtures.live     || []),
     ...(fixtures.finished || []),
-    ...(fixtures.scheduled || []),
+    ...(fixtures.scheduled|| []),
   ].sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
   const filtered = allMatches.filter(m => {
-    if (filter === "today") {
-      return new Date(m.utcDate).toDateString() === new Date().toDateString();
-    }
+    if (filter === "today") return new Date(m.utcDate).toDateString() === new Date().toDateString();
     if (filter === "mine" && selectedParticipant) {
       const p = participants.find(p => p.name === selectedParticipant);
       if (!p) return true;
@@ -131,32 +121,34 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
 
   const byDate = filtered.reduce((acc, m) => {
     const d = new Date(m.utcDate).toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
-    if (!acc[d]) acc[d] = [];
-    acc[d].push(m);
+    (acc[d] = acc[d] || []).push(m);
     return acc;
   }, {});
 
-  const FILTERS = [
-    { id: "all", label: "All" },
-    { id: "today", label: "Today" },
-    { id: "mine", label: "My Teams" },
-  ];
+  const FILTERS = [{ id:"all",label:"All" }, { id:"today",label:"Today" }, { id:"mine",label:"My Teams" }];
 
   return (
-    <main style={{ paddingBottom: 60 }}>
-      <div className="filter-bar">
-        {FILTERS.map(f => (
-          <button key={f.id} className={`pill${filter === f.id ? " active" : ""}`} onClick={() => setFilter(f.id)}>
-            {f.label}
-          </button>
+    <main style={{ paddingBottom: 16 }}>
+      {/* Filter — Apple "Yesterday | Today | Upcoming" style */}
+      <div className="fixture-filter">
+        {FILTERS.map((f, i) => (
+          <div key={f.id} style={{ display: "contents" }}>
+            {i > 0 && <div className="fixture-filter-sep" />}
+            <button
+              className={`fixture-filter-btn${filter === f.id ? " active" : ""}`}
+              onClick={() => setFilter(f.id)}
+            >
+              {f.label}
+            </button>
+          </div>
         ))}
         {filter === "mine" && (
           <select
-            className="filter-select"
+            className="fixture-filter-select"
             value={selectedParticipant}
             onChange={e => setSelectedParticipant(e.target.value)}
           >
-            <option value="">Select participant…</option>
+            <option value="">Select…</option>
             {participants.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
           </select>
         )}
@@ -167,12 +159,12 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
       )}
 
       {Object.entries(byDate).map(([date, matches]) => (
-        <section key={date}>
-          <div className="date-label">{date}</div>
+        <div key={date} className="date-section">
+          <div className="date-heading">{date}</div>
           {matches.map(m => (
             <MatchCard key={m.id} match={m} teamToParticipant={teamToParticipant} />
           ))}
-        </section>
+        </div>
       ))}
     </main>
   );

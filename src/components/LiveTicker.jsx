@@ -1,18 +1,15 @@
 export default function LiveTicker({ matches }) {
   if (!matches || matches.length === 0) return null;
-
   const text = matches.map(m => {
-    const home = m.homeTeam?.name || "Home";
-    const away = m.awayTeam?.name || "Away";
+    const h = m.homeTeam?.name || "Home";
+    const a = m.awayTeam?.name || "Away";
     const hg = m.score?.fullTime?.home ?? 0;
     const ag = m.score?.fullTime?.away ?? 0;
-    const min = m.minute ? ` ${m.minute}'` : "";
-    return `● ${home} ${hg}–${ag} ${away}${min}`;
-  }).join("   ·   ");
-
+    return `● ${h} ${hg}–${ag} ${a}${m.minute ? `  ${m.minute}'` : ""}`;
+  }).join("    ·    ");
   return (
-    <div className="live-ticker">
-      <div className="live-ticker-inner">{text}</div>
+    <div className="ticker">
+      <div className="ticker-inner">{text}</div>
     </div>
   );
 }

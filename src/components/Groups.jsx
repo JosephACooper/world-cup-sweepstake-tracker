@@ -1,32 +1,23 @@
 export default function Groups({ standings, teamToParticipant }) {
-  if (!standings || standings.length === 0) {
+  if (!standings || standings.length === 0)
     return <div className="empty-state">Group standings not available yet.</div>;
-  }
   return (
     <div className="groups-grid">
-      {standings.map(group => (
-        <GroupTable key={group.group} group={group} teamToParticipant={teamToParticipant} />
-      ))}
+      {standings.map(g => <GroupCard key={g.group} group={g} teamToParticipant={teamToParticipant} />)}
     </div>
   );
 }
 
-function GroupTable({ group, teamToParticipant }) {
+function GroupCard({ group, teamToParticipant }) {
   const letter = group.group?.replace("GROUP_", "") || "?";
   return (
     <div className="group-card">
-      <div className="group-card-head">Group {letter}</div>
-      <table>
+      <div className="group-head">Group {letter}</div>
+      <table className="group-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Team</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
-            <th>GD</th>
-            <th>Pts</th>
+            <th>#</th><th>Team</th>
+            <th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th>
           </tr>
         </thead>
         <tbody>
@@ -36,17 +27,15 @@ function GroupTable({ group, teamToParticipant }) {
               <tr
                 key={row.team.id}
                 style={{
-                  background: idx < 2 ? "rgba(48,209,88,.05)" : "transparent",
+                  background: idx < 2 ? "rgba(50,215,75,.04)" : "transparent",
                   borderLeft: p ? `3px solid ${p.color}` : "3px solid transparent",
                 }}
               >
                 <td>{row.position}</td>
                 <td>
-                  {row.team.crest && (
-                    <img src={row.team.crest} alt="" style={{ width:14, height:14, objectFit:"contain", marginRight:5, verticalAlign:"middle" }} />
-                  )}
+                  {row.team.crest && <img src={row.team.crest} alt="" style={{width:14,height:14,objectFit:"contain",marginRight:5,verticalAlign:"middle"}} />}
                   {row.team.name}
-                  {p && <span style={{ marginLeft:5, color:p.color, fontSize:10, fontWeight:600 }}>{p.name}</span>}
+                  {p && <span style={{marginLeft:5,color:p.color,fontSize:10,fontWeight:600}}>{p.name}</span>}
                 </td>
                 <td>{row.playedGames}</td>
                 <td>{row.won}</td>
