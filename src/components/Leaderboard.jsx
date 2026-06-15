@@ -268,7 +268,8 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
             <tbody>
               <tr><td style={{ paddingRight: 16 }}>10–19</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+1</strong></td><td style={{ color: "#10b981" }}><strong>+0.5</strong></td></tr>
               <tr><td style={{ paddingRight: 16 }}>20–29</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+1.5</strong></td><td style={{ color: "#10b981" }}><strong>+1</strong></td></tr>
-              <tr><td style={{ paddingRight: 16 }}>30+</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+2</strong></td><td style={{ color: "#10b981" }}><strong>+1.5</strong></td></tr>
+              <tr><td style={{ paddingRight: 16 }}>30–49</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+2</strong></td><td style={{ color: "#10b981" }}><strong>+1.5</strong></td></tr>
+              <tr><td style={{ paddingRight: 16 }}>50+</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+2.5</strong></td><td style={{ color: "#10b981" }}><strong>+2</strong></td></tr>
             </tbody>
           </table>
           <p style={{ marginTop: 0, marginBottom: 0, color: "#3a5070", fontSize: 12 }}>

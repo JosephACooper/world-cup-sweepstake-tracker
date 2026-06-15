@@ -114,24 +114,45 @@ describe("deriveUpsetBonuses", () => {
     expect(bonuses.Argentina).toBeUndefined();
   });
 
-  // ── tier 3: gap 30+ ────────────────────────────────────────────────────────
-  it("tier 3 win (gap 30+): awards +2", () => {
+  // ── tier 3: gap 30–49 ─────────────────────────────────────────────────────
+  it("tier 3 win (gap 30–49): awards +2", () => {
+    const lookup = { Argentina: 1, Panama: 34 }; // gap 33
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Argentina", "Panama", false)],
+      lookup,
+    );
+    expect(bonuses.Panama).toBe(2);
+    expect(bonuses.Argentina).toBeUndefined();
+  });
+
+  it("tier 3 draw (gap 30–49): awards +1.5 to underdog only", () => {
+    const lookup = { Argentina: 1, Panama: 34 }; // gap 33
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Argentina", "Panama", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Panama).toBe(1.5);
+    expect(bonuses.Argentina).toBeUndefined();
+  });
+
+  // ── tier 4: gap 50+ ────────────────────────────────────────────────────────
+  it("tier 4 win (gap 50+): awards +2.5", () => {
     const lookup = { Brazil: 6, "Saudi Arabia": 60 }; // gap 54
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Brazil", "Saudi Arabia", false)],
       lookup,
     );
-    expect(bonuses["Saudi Arabia"]).toBe(2);
+    expect(bonuses["Saudi Arabia"]).toBe(2.5);
     expect(bonuses.Brazil).toBeUndefined();
   });
 
-  it("tier 3 draw (gap 30+): awards +1.5 to underdog only", () => {
+  it("tier 4 draw (gap 50+): awards +2 to underdog only", () => {
     const lookup = { Spain: 2, "Cape Verde Islands": 67 }; // gap 65
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Spain", "Cape Verde Islands", "DRAW")],
       lookup,
     );
-    expect(bonuses["Cape Verde Islands"]).toBe(1.5);
+    expect(bonuses["Cape Verde Islands"]).toBe(2);
     expect(bonuses.Spain).toBeUndefined();
   });
 

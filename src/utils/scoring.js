@@ -94,8 +94,9 @@ export function buildRankLookup(participants = [], extraTeams = []) {
   return lookup;
 }
 
-// Upset tiers by rank gap (underdog only): gap 10–19 / 20–29 / 30+
+// Upset tiers by rank gap (underdog only): gap 10–19 / 20–29 / 30–49 / 50+
 const UPSET_TIERS = [
+  { min: 50, draw: 2,   win: 2.5 },
   { min: 30, draw: 1.5, win: 2   },
   { min: 20, draw: 1,   win: 1.5 },
   { min: 10, draw: 0.5, win: 1   },
