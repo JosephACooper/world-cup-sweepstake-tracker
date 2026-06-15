@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { getPrizeWinners, STAGE_LABELS, TIERS } from "../utils/scoring.js";
 import { PARTICIPANTS, UNASSIGNED_TEAMS } from "../data/participants.js";
 
@@ -72,6 +73,7 @@ function stageColor(pts) {
 
 export default function Leaderboard({ participantData, bracket, leaderboard, waiting }) {
   const prizes = getPrizeWinners(participantData, bracket);
+  const [showRanks, setShowRanks] = useState(false);
 
   return (
     <main style={{ padding: "0 0 60px" }}>
@@ -229,7 +231,7 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
           </div>
 
           <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 6 }}>Rank multiplier (FIFA rankings, June 2026)</p>
-          <div style={{ overflowX: "auto", marginBottom: 16 }}>
+          <div style={{ overflowX: "auto", marginBottom: 8 }}>
             <table style={{ borderCollapse: "collapse", fontSize: 12, width: "100%" }}>
               <tbody>
                 {TIERS.map(t => {
@@ -239,11 +241,19 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
                       <td style={td({ left: true })}>
                         Rank {t.max === Infinity ? `${t.min}+` : `${t.min}–${t.max}`}
                         {teamsInTier.length > 0 && (
-                          <div style={{ marginTop: 4, lineHeight: 1.8 }}>
+                          <div style={{ marginTop: 4, lineHeight: 2 }}>
                             {teamsInTier.map(team => (
-                              <span key={team.name} title={`${team.name} (#${team.rank})`} style={{ marginRight: 2, fontSize: 15 }}>
-                                {team.flag}
-                              </span>
+                              showRanks ? (
+                                <span key={team.name} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginRight: 10, marginBottom: 2 }}>
+                                  <span style={{ fontSize: 15 }}>{team.flag}</span>
+                                  <span style={{ color: "#3a5070", fontSize: 11 }}>#{team.rank}</span>
+                                  <span style={{ color: "#94a3b8", fontSize: 11 }}>{team.name}</span>
+                                </span>
+                              ) : (
+                                <span key={team.name} title={`${team.name} (#${team.rank})`} style={{ marginRight: 2, fontSize: 15 }}>
+                                  {team.flag}
+                                </span>
+                              )
                             ))}
                           </div>
                         )}
@@ -255,6 +265,21 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
               </tbody>
             </table>
           </div>
+          <button
+            onClick={() => setShowRanks(v => !v)}
+            style={{
+              marginBottom: 16,
+              padding: "5px 12px",
+              borderRadius: 6,
+              border: "1px solid #132035",
+              background: showRanks ? "#132035" : "transparent",
+              color: showRanks ? "#dde4f0" : "#3a5070",
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {showRanks ? "Hide rankings" : "Show rankings"}
+          </button>
 
           <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>Upset bonus</p>
           <table style={{ borderCollapse: "collapse", fontSize: 13, marginBottom: 6, width: "100%" }}>
