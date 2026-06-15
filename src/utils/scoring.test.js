@@ -73,16 +73,69 @@ describe("buildRankLookup", () => {
 // ─── deriveUpsetBonuses ───────────────────────────────────────────────────────
 
 describe("deriveUpsetBonuses", () => {
-  it("awards 1 for beating a team ranked 10+ places above", () => {
-    const lookup = { Brazil: 6, "Saudi Arabia": 60 };
+  // ── tier 1: gap 10–19 ──────────────────────────────────────────────────────
+  it("tier 1 win (gap 10–19): awards +1", () => {
+    const lookup = { France: 3, Japan: 18 }; // gap 15
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "France", "Japan", false)],
+      lookup,
+    );
+    expect(bonuses.Japan).toBe(1);
+    expect(bonuses.France).toBeUndefined();
+  });
+
+  it("tier 1 draw (gap 10–19): awards +0.5 to underdog only", () => {
+    const lookup = { Spain: 7, Morocco: 26 }; // gap 19
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Spain", "Morocco", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Morocco).toBe(0.5);
+    expect(bonuses.Spain).toBeUndefined();
+  });
+
+  // ── tier 2: gap 20–29 ──────────────────────────────────────────────────────
+  it("tier 2 win (gap 20–29): awards +1.5", () => {
+    const lookup = { Argentina: 1, Ecuador: 23 }; // gap 22
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Argentina", "Ecuador", false)],
+      lookup,
+    );
+    expect(bonuses.Ecuador).toBe(1.5);
+  });
+
+  it("tier 2 draw (gap 20–29): awards +1 to underdog only", () => {
+    const lookup = { Argentina: 1, Ecuador: 23 }; // gap 22
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Argentina", "Ecuador", "DRAW")],
+      lookup,
+    );
+    expect(bonuses.Ecuador).toBe(1);
+    expect(bonuses.Argentina).toBeUndefined();
+  });
+
+  // ── tier 3: gap 30+ ────────────────────────────────────────────────────────
+  it("tier 3 win (gap 30+): awards +2", () => {
+    const lookup = { Brazil: 6, "Saudi Arabia": 60 }; // gap 54
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Brazil", "Saudi Arabia", false)],
       lookup,
     );
-    expect(bonuses["Saudi Arabia"]).toBe(1);
+    expect(bonuses["Saudi Arabia"]).toBe(2);
     expect(bonuses.Brazil).toBeUndefined();
   });
 
+  it("tier 3 draw (gap 30+): awards +1.5 to underdog only", () => {
+    const lookup = { Spain: 2, "Cape Verde Islands": 67 }; // gap 65
+    const bonuses = deriveUpsetBonuses(
+      [match("GROUP_STAGE", "Spain", "Cape Verde Islands", "DRAW")],
+      lookup,
+    );
+    expect(bonuses["Cape Verde Islands"]).toBe(1.5);
+    expect(bonuses.Spain).toBeUndefined();
+  });
+
+  // ── general ────────────────────────────────────────────────────────────────
   it("does not award bonus when rank gap is below 10", () => {
     const lookup = { Germany: 10, Croatia: 11 };
     const bonuses = deriveUpsetBonuses(
@@ -90,25 +143,6 @@ describe("deriveUpsetBonuses", () => {
       lookup,
     );
     expect(bonuses.Croatia).toBeUndefined();
-  });
-
-  it("accumulates bonuses across multiple upsets", () => {
-    const lookup = { France: 3, Japan: 18 };
-    const bonuses = deriveUpsetBonuses([
-      match("GROUP_STAGE", "France", "Japan", false),   // 18-3=15 ≥ 10 ✓
-      match("ROUND_OF_16", "France", "Japan", false),   // +1 again
-    ], lookup);
-    expect(bonuses.Japan).toBe(2.0);
-  });
-
-  it("awards 0.5 to the underdog on a draw against a team ranked 10+ places above", () => {
-    const lookup = { Spain: 7, Morocco: 26 };
-    const bonuses = deriveUpsetBonuses(
-      [match("GROUP_STAGE", "Spain", "Morocco", "DRAW")],
-      lookup,
-    );
-    expect(bonuses.Morocco).toBe(0.5);
-    expect(bonuses.Spain).toBeUndefined();
   });
 
   it("does not award draw bonus when rank gap is below 10", () => {
@@ -122,13 +156,22 @@ describe("deriveUpsetBonuses", () => {
   });
 
   it("awards draw bonus to the home underdog when home rank is higher", () => {
-    const lookup = { Morocco: 26, Spain: 7 };
+    const lookup = { Morocco: 26, Spain: 7 }; // gap 19, tier 1
     const bonuses = deriveUpsetBonuses(
       [match("GROUP_STAGE", "Morocco", "Spain", "DRAW")],
       lookup,
     );
     expect(bonuses.Morocco).toBe(0.5);
     expect(bonuses.Spain).toBeUndefined();
+  });
+
+  it("accumulates bonuses across multiple upsets", () => {
+    const lookup = { France: 3, Japan: 18 }; // gap 15, tier 1
+    const bonuses = deriveUpsetBonuses([
+      match("GROUP_STAGE", "France", "Japan", false),
+      match("ROUND_OF_16", "France", "Japan", false),
+    ], lookup);
+    expect(bonuses.Japan).toBe(2.0);
   });
 
   it("skips matches where either team rank is unknown", () => {

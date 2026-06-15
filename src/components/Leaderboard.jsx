@@ -257,9 +257,22 @@ export default function Leaderboard({ participantData, bracket, leaderboard, wai
           </div>
 
           <p style={{ fontWeight: 700, color: "#dde4f0", marginBottom: 4 }}>Upset bonus</p>
-          <p style={{ marginTop: 0, marginBottom: 0 }}>
-            Against a team ranked 10+ places above you: <strong style={{ color: "#10b981" }}>+1 per win</strong>, <strong style={{ color: "#10b981" }}>+0.5 per draw</strong>.
-            Applies in group stage and all knockout rounds.
+          <table style={{ borderCollapse: "collapse", fontSize: 13, marginBottom: 6, width: "100%" }}>
+            <thead>
+              <tr style={{ color: "#3a5070", textAlign: "left" }}>
+                <th style={{ paddingRight: 16, fontWeight: 600 }}>Rank gap</th>
+                <th style={{ paddingRight: 16, fontWeight: 600 }}>Win</th>
+                <th style={{ fontWeight: 600 }}>Draw</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td style={{ paddingRight: 16 }}>10–19</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+1</strong></td><td style={{ color: "#10b981" }}><strong>+0.5</strong></td></tr>
+              <tr><td style={{ paddingRight: 16 }}>20–29</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+1.5</strong></td><td style={{ color: "#10b981" }}><strong>+1</strong></td></tr>
+              <tr><td style={{ paddingRight: 16 }}>30+</td><td style={{ paddingRight: 16, color: "#10b981" }}><strong>+2</strong></td><td style={{ color: "#10b981" }}><strong>+1.5</strong></td></tr>
+            </tbody>
+          </table>
+          <p style={{ marginTop: 0, marginBottom: 0, color: "#3a5070", fontSize: 12 }}>
+            Rank gap = opponent rank − your rank. Applies in group stage and all knockout rounds.
           </p>
         </div>
       </section>
