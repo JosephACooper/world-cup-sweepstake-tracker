@@ -7,7 +7,6 @@ export const PARTICIPANTS = [
       { name: "Portugal",     apiName: "Portugal",     flag: "🇵🇹", rank: 5  },
       { name: "Ghana",        apiName: "Ghana",        flag: "🇬🇭", rank: 73 },
       { name: "New Zealand",  apiName: "New Zealand",  flag: "🇳🇿", rank: 85 },
-      { name: "Haiti",        apiName: "Haiti",        flag: "🇭🇹", rank: 83 },
     ],
   },
   {
@@ -18,7 +17,7 @@ export const PARTICIPANTS = [
       { name: "Korea Republic",  apiName: "South Korea",  flag: "🇰🇷", rank: 25 },
       { name: "Sweden",          apiName: "Sweden",       flag: "🇸🇪", rank: 38 },
       { name: "Egypt",           apiName: "Egypt",        flag: "🇪🇬", rank: 29 },
-      { name: "Panama",          apiName: "Panama",       flag: "🇵🇦", rank: 34 },
+      { name: "Cape Verde Islands", apiName: "Cape Verde Islands", flag: "🇨🇻", rank: 67 },
     ],
   },
   {
@@ -76,11 +75,10 @@ export const PARTICIPANTS = [
     name: "Maddie",
     color: "#a78bfa",
     teams: [
-      { name: "Paraguay",          apiName: "Paraguay",          flag: "🇵🇾", rank: 41 },
-      { name: "Jordan",            apiName: "Jordan",            flag: "🇯🇴", rank: 63 },
-      { name: "Uzbekistan",        apiName: "Uzbekistan",        flag: "🇺🇿", rank: 50 },
-      { name: "Germany",           apiName: "Germany",           flag: "🇩🇪", rank: 10 },
-      { name: "Cape Verde Islands", apiName: "Cape Verde Islands", flag: "🇨🇻", rank: 67 },
+      { name: "Paraguay",   apiName: "Paraguay",   flag: "🇵🇾", rank: 41 },
+      { name: "Jordan",     apiName: "Jordan",     flag: "🇯🇴", rank: 63 },
+      { name: "Uzbekistan", apiName: "Uzbekistan", flag: "🇺🇿", rank: 50 },
+      { name: "Germany",    apiName: "Germany",    flag: "🇩🇪", rank: 10 },
     ],
   },
   {
@@ -101,6 +99,7 @@ export const PARTICIPANTS = [
       { name: "Iran",          apiName: "Iran",          flag: "🇮🇷", rank: 20 },
       { name: "South Africa",  apiName: "South Africa",  flag: "🇿🇦", rank: 61 },
       { name: "Mexico",        apiName: "Mexico",        flag: "🇲🇽", rank: 13 },
+      { name: "Haiti",         apiName: "Haiti",         flag: "🇭🇹", rank: 83 },
     ],
   },
   {
@@ -111,6 +110,7 @@ export const PARTICIPANTS = [
       { name: "Canada",         apiName: "Canada",        flag: "🇨🇦", rank: 30 },
       { name: "Croatia",        apiName: "Croatia",       flag: "🇭🇷", rank: 11 },
       { name: "Switzerland",    apiName: "Switzerland",   flag: "🇨🇭", rank: 19 },
+      { name: "Panama",         apiName: "Panama",        flag: "🇵🇦", rank: 34 },
     ],
   },
 ];
