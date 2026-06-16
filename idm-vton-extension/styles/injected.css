@@ -1,0 +1,116 @@
+/* IDM-VTON injected styles — scoped to avoid host-page conflicts */
+
+#vton-btn-wrapper {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#vton-tryon-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px 20px 12px;
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+  cursor: pointer;
+  font-family: system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  gap: 3px;
+  transition: background 120ms ease, color 120ms ease;
+  box-sizing: border-box;
+}
+
+#vton-tryon-btn:hover:not(:disabled) {
+  background: #ffffff;
+  color: #000000;
+}
+
+#vton-tryon-btn:disabled {
+  cursor: default;
+}
+
+#vton-tryon-btn.vton-btn--generating {
+  background: #333333;
+  color: #ffffff;
+  border-color: #333333;
+}
+
+#vton-tryon-btn.vton-btn--disabled {
+  background: #f0f0f0;
+  color: #999999;
+  border-color: #e0e0e0;
+}
+
+.vton-btn-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.vton-btn-sub {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  opacity: 0.6;
+  line-height: 1;
+}
+
+/* Skeleton shimmer */
+.vton-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: #f0f0f0;
+  display: block;
+  min-height: 100px;
+}
+
+.vton-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: vton-shimmer 1.4s linear infinite;
+}
+
+@keyframes vton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Error state */
+.vton-error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f7f7f7;
+  border: 1px solid #e0e0e0;
+  min-height: 100px;
+  gap: 6px;
+  box-sizing: border-box;
+}
+
+.vton-error-icon {
+  font-size: 24px;
+  color: #cccccc;
+  line-height: 1;
+}
+
+.vton-error-text {
+  font-family: system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: #999999;
+  text-transform: uppercase;
+}

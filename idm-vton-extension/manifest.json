@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "IDM-VTON Try It On",
+  "version": "1.0.0",
+  "description": "Virtual clothing try-on for ASOS and Newlook powered by IDM-VTON",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.asos.com/*",
+    "https://*.newlook.com/*",
+    "https://api.replicate.com/*"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.asos.com/*",
+        "https://*.newlook.com/*"
+      ],
+      "js": [
+        "content/observer.js",
+        "content/ui.js",
+        "content/content.js"
+      ],
+      "css": [
+        "styles/injected.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}

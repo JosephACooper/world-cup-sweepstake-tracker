@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IDM-VTON</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header class="popup-header">
+      <span class="popup-logo">TRY IT ON</span>
+      <span class="popup-subtitle">IDM-VTON</span>
+    </header>
+
+    <section class="section">
+      <h2 class="section-title">Reference Photos</h2>
+      <p class="section-desc">Upload photos of yourself to try garments on</p>
+      <div class="photo-slots">
+        <div class="photo-slot" id="slot-front">
+          <input type="file" id="input-front" accept="image/jpeg,image/png" hidden>
+          <div class="slot-inner" id="slot-inner-front">
+            <div class="slot-empty" id="empty-front">
+              <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="slot-label">Front</span>
+            </div>
+            <div class="slot-preview" id="preview-front" hidden>
+              <img id="thumb-front" src="" alt="Front reference">
+              <button class="remove-btn" id="remove-front" aria-label="Remove front photo">×</button>
+            </div>
+          </div>
+          <span class="slot-title">Front</span>
+        </div>
+
+        <div class="photo-slot" id="slot-back">
+          <input type="file" id="input-back" accept="image/jpeg,image/png" hidden>
+          <div class="slot-inner" id="slot-inner-back">
+            <div class="slot-empty" id="empty-back">
+              <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="slot-label">Back</span>
+            </div>
+            <div class="slot-preview" id="preview-back" hidden>
+              <img id="thumb-back" src="" alt="Back reference">
+              <button class="remove-btn" id="remove-back" aria-label="Remove back photo">×</button>
+            </div>
+          </div>
+          <span class="slot-title">Back</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2 class="section-title">API Key</h2>
+      <p class="section-desc">Your Replicate API key</p>
+      <div class="api-key-row">
+        <input
+          type="password"
+          id="api-key-input"
+          class="api-key-input"
+          placeholder="r8_••••••••••••••••••••••••••••••••••••••"
+          autocomplete="off"
+          spellcheck="false"
+        >
+        <button class="save-btn" id="save-api-key">Save</button>
+      </div>
+      <span class="save-status" id="save-status" hidden>Saved ✓</span>
+    </section>
+
+    <footer class="popup-footer">
+      <div class="status-indicator">
+        <span class="status-dot" id="status-dot"></span>
+        <span class="status-label" id="status-label">Ready</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
