@@ -68,7 +68,7 @@ export default function App() {
   }, [fetchAll]);
 
   const rankLookup = useMemo(() => buildRankLookup(PARTICIPANTS, UNASSIGNED_TEAMS), []);
-  const statusByTeam = useMemo(() => deriveTeamStatus(fixtures), [fixtures]);
+  const statusByTeam = useMemo(() => deriveTeamStatus(fixtures, standings), [fixtures, standings]);
   const teamFinishes = useMemo(() => deriveTeamFinishes(fixtures.finished || []), [fixtures.finished]);
   const upsetBonuses = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
   const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, upsetBonuses), [teamFinishes, upsetBonuses]);

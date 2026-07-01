@@ -21,7 +21,7 @@ const KNOCKOUT_STAGE_LABELS = {
 const GROUP_STAGE_MATCH_COUNT = 3;
 
 // Returns { [apiName]: { status: "in" | "out" | "champion", outAt: string | null } }
-export function deriveTeamStatus(fixtures = {}) {
+export function deriveTeamStatus(fixtures = {}, standings = []) {
   const finished = fixtures.finished || [];
   const live = fixtures.live || [];
   const scheduled = fixtures.scheduled || [];
@@ -55,8 +55,21 @@ export function deriveTeamStatus(fixtures = {}) {
     else setOut(homeName, stageLabel);
   }
 
-  // Group-stage elimination can only be determined once the Round of 32 lineup
-  // (including the best-third-place qualifiers) has actually been fixtured.
+  // Last place in a finished group is eliminated immediately — this doesn't
+  // depend on the cross-group best-third-place race, so it's known as soon
+  // as that group's own matches are done.
+  for (const group of standings) {
+    const table = group.table || [];
+    if (table.length === 0) continue;
+    const complete = table.every(row => row.playedGames >= GROUP_STAGE_MATCH_COUNT);
+    if (!complete) continue;
+    const last = table.find(row => row.position === table.length);
+    if (last?.team?.name) setOut(last.team.name, "Group Stage");
+  }
+
+  // The remaining group-stage eliminations (3rd-placed teams that miss out on
+  // a best-third-place spot) can only be confirmed once the Round of 32
+  // lineup — which hinges on every group finishing — has actually been fixtured.
   const r32Matches = allMatches.filter(m => m.stage === "ROUND_OF_32");
   const r32TeamsKnown = r32Matches.length > 0 && r32Matches.every(m => m.homeTeam?.name && m.awayTeam?.name);
   if (r32TeamsKnown) {

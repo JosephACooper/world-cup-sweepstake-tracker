@@ -338,4 +338,43 @@ describe("deriveTeamStatus", () => {
     });
     expect(status.Canada).toBeUndefined();
   });
+
+  it("marks last place in a completed group out immediately, even while other groups' R32 slots are still TBD", () => {
+    const standings = [{
+      group: "GROUP_A",
+      table: [
+        { position: 1, playedGames: 3, team: { name: "Brazil" } },
+        { position: 2, playedGames: 3, team: { name: "Spain" } },
+        { position: 3, playedGames: 3, team: { name: "Germany" } },
+        { position: 4, playedGames: 3, team: { name: "Canada" } },
+      ],
+    }];
+    const status = deriveTeamStatus({
+      finished: [
+        match("GROUP_STAGE", "Canada", "Brazil", false),
+        match("GROUP_STAGE", "Canada", "Spain", false),
+        match("GROUP_STAGE", "Canada", "Germany", false),
+      ],
+      live: [],
+      // Another group's R32 slot is still unresolved (best-third-place TBD).
+      scheduled: [{ status: "SCHEDULED", stage: "ROUND_OF_32", homeTeam: {}, awayTeam: {}, score: { winner: null } }],
+    }, standings);
+    expect(status.Canada).toEqual({ status: "out", outAt: "Group Stage" });
+    expect(status.Brazil).toBeUndefined();
+    expect(status.Spain).toBeUndefined();
+    expect(status.Germany).toBeUndefined();
+  });
+
+  it("leaves a group untouched until all its teams have finished their group games", () => {
+    const standings = [{
+      group: "GROUP_A",
+      table: [
+        { position: 1, playedGames: 3, team: { name: "Brazil" } },
+        { position: 2, playedGames: 2, team: { name: "Spain" } },
+      ],
+    }];
+    const status = deriveTeamStatus({ finished: [], live: [], scheduled: [] }, standings);
+    expect(status.Brazil).toBeUndefined();
+    expect(status.Spain).toBeUndefined();
+  });
 });
