@@ -8,6 +8,77 @@ export const STAGE_LABELS = {
   5:   "Winner",
 };
 
+const KNOCKOUT_STAGE_LABELS = {
+  ROUND_OF_32:    "Round of 32",
+  ROUND_OF_16:    "Round of 16",
+  QUARTER_FINALS: "Quarter-final",
+  SEMI_FINALS:    "Semi-final",
+  THIRD_PLACE:    "Third-place match",
+  FINAL:          "Final",
+};
+
+// Teams play a 3-match round-robin group stage (12 groups of 4) before Round of 32.
+const GROUP_STAGE_MATCH_COUNT = 3;
+
+// Returns { [apiName]: { status: "in" | "out" | "champion", outAt: string | null } }
+export function deriveTeamStatus(fixtures = {}) {
+  const finished = fixtures.finished || [];
+  const live = fixtures.live || [];
+  const scheduled = fixtures.scheduled || [];
+  const allMatches = [...finished, ...live, ...scheduled];
+
+  const status = {};
+  const setOut = (name, stage) => {
+    if (!name || status[name]) return;
+    status[name] = { status: "out", outAt: stage };
+  };
+  const setChampion = (name) => {
+    if (!name) return;
+    status[name] = { status: "champion", outAt: null };
+  };
+
+  for (const match of finished) {
+    if (match.stage === "GROUP_STAGE") continue;
+    const homeName = match.homeTeam?.name;
+    const awayName = match.awayTeam?.name;
+    const winner = match.score?.winner;
+    if (!homeName || !awayName || !winner || winner === "DRAW") continue;
+
+    if (match.stage === "FINAL") {
+      if (winner === "HOME_TEAM") { setChampion(homeName); setOut(awayName, "Final"); }
+      else { setChampion(awayName); setOut(homeName, "Final"); }
+      continue;
+    }
+
+    const stageLabel = KNOCKOUT_STAGE_LABELS[match.stage] ?? match.stage;
+    if (winner === "HOME_TEAM") setOut(awayName, stageLabel);
+    else setOut(homeName, stageLabel);
+  }
+
+  // Group-stage elimination can only be determined once the Round of 32 lineup
+  // (including the best-third-place qualifiers) has actually been fixtured.
+  const r32Matches = allMatches.filter(m => m.stage === "ROUND_OF_32");
+  const r32TeamsKnown = r32Matches.length > 0 && r32Matches.every(m => m.homeTeam?.name && m.awayTeam?.name);
+  if (r32TeamsKnown) {
+    const r32Teams = new Set(r32Matches.flatMap(m => [m.homeTeam.name, m.awayTeam.name]));
+    const groupMatchCounts = {};
+    for (const match of finished) {
+      if (match.stage !== "GROUP_STAGE") continue;
+      const homeName = match.homeTeam?.name;
+      const awayName = match.awayTeam?.name;
+      if (homeName) groupMatchCounts[homeName] = (groupMatchCounts[homeName] || 0) + 1;
+      if (awayName) groupMatchCounts[awayName] = (groupMatchCounts[awayName] || 0) + 1;
+    }
+    for (const [name, count] of Object.entries(groupMatchCounts)) {
+      if (count >= GROUP_STAGE_MATCH_COUNT && !r32Teams.has(name)) {
+        setOut(name, "Group Stage");
+      }
+    }
+  }
+
+  return status;
+}
+
 // Rank multiplier tiers (FIFA rankings, June 2026)
 // Score = stage points × multiplier + upset bonus
 export const TIERS = [

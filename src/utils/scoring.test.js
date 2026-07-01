@@ -3,6 +3,7 @@ import {
   buildRankLookup,
   computeParticipantScores,
   deriveTeamFinishes,
+  deriveTeamStatus,
   deriveUpsetBonuses,
   getMultiplier,
   sortLeaderboard,
@@ -272,5 +273,69 @@ describe("sortLeaderboard", () => {
     );
     const lb = sortLeaderboard(data);
     expect(lb.map(p => p.name)).toEqual(["A", "B", "C"]);
+  });
+});
+
+// ─── deriveTeamStatus ────────────────────────────────────────────────────────
+
+describe("deriveTeamStatus", () => {
+  it("marks a knockout loser as out with the stage they lost at", () => {
+    const status = deriveTeamStatus({
+      finished: [match("ROUND_OF_16", "Canada", "France", false)],
+      live: [],
+      scheduled: [],
+    });
+    expect(status.Canada).toEqual({ status: "out", outAt: "Round of 16" });
+    expect(status.France).toBeUndefined();
+  });
+
+  it("marks the final winner as champion and the loser as out", () => {
+    const status = deriveTeamStatus({
+      finished: [match("FINAL", "Argentina", "England", true)],
+      live: [],
+      scheduled: [],
+    });
+    expect(status.Argentina).toEqual({ status: "champion", outAt: null });
+    expect(status.England).toEqual({ status: "out", outAt: "Final" });
+  });
+
+  it("does not mark group stage teams out until the Round of 32 lineup is known", () => {
+    const status = deriveTeamStatus({
+      finished: [
+        match("GROUP_STAGE", "Canada", "Brazil", false),
+        match("GROUP_STAGE", "Canada", "Spain", false),
+        match("GROUP_STAGE", "Canada", "Germany", false),
+      ],
+      live: [],
+      scheduled: [],
+    });
+    expect(status.Canada).toBeUndefined();
+  });
+
+  it("marks a team out at Group Stage once R32 lineup excludes them", () => {
+    const status = deriveTeamStatus({
+      finished: [
+        match("GROUP_STAGE", "Canada", "Brazil", false),
+        match("GROUP_STAGE", "Canada", "Spain", false),
+        match("GROUP_STAGE", "Canada", "Germany", false),
+      ],
+      live: [],
+      scheduled: [match("ROUND_OF_32", "Brazil", "Spain", null, "SCHEDULED")],
+    });
+    expect(status.Canada).toEqual({ status: "out", outAt: "Group Stage" });
+    expect(status.Brazil).toBeUndefined();
+  });
+
+  it("does not evaluate group elimination while R32 fixtures still have TBD teams", () => {
+    const status = deriveTeamStatus({
+      finished: [
+        match("GROUP_STAGE", "Canada", "Brazil", false),
+        match("GROUP_STAGE", "Canada", "Spain", false),
+        match("GROUP_STAGE", "Canada", "Germany", false),
+      ],
+      live: [],
+      scheduled: [{ status: "SCHEDULED", stage: "ROUND_OF_32", homeTeam: {}, awayTeam: {}, score: { winner: null } }],
+    });
+    expect(status.Canada).toBeUndefined();
   });
 });

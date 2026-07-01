@@ -4,6 +4,7 @@ import {
   buildRankLookup,
   computeParticipantScores,
   deriveTeamFinishes,
+  deriveTeamStatus,
   deriveUpsetBonuses,
   sortLeaderboard,
 } from "./utils/scoring.js";
@@ -11,11 +12,13 @@ import LiveTicker from "./components/LiveTicker.jsx";
 import Leaderboard from "./components/Leaderboard.jsx";
 import Tournament from "./components/Tournament.jsx";
 import Fixtures from "./components/Fixtures.jsx";
+import TeamStatus from "./components/TeamStatus.jsx";
 
 const REFRESH_INTERVAL = 5 * 60 * 1000;
 const TABS = [
   { id: "fixtures", label: "Fixtures" },
   { id: "tournament", label: "Tournament" },
+  { id: "status", label: "Team Status" },
   { id: "underdogs", label: "Leaderboard" },
 ];
 
@@ -65,6 +68,7 @@ export default function App() {
   }, [fetchAll]);
 
   const rankLookup = useMemo(() => buildRankLookup(PARTICIPANTS, UNASSIGNED_TEAMS), []);
+  const statusByTeam = useMemo(() => deriveTeamStatus(fixtures), [fixtures]);
   const teamFinishes = useMemo(() => deriveTeamFinishes(fixtures.finished || []), [fixtures.finished]);
   const upsetBonuses = useMemo(() => deriveUpsetBonuses(fixtures.finished || [], rankLookup), [fixtures.finished, rankLookup]);
   const participantData = useMemo(() => computeParticipantScores(PARTICIPANTS, teamFinishes, upsetBonuses), [teamFinishes, upsetBonuses]);
@@ -136,6 +140,9 @@ export default function App() {
       )}
       {activeTab === "tournament" && (
         <Tournament standings={standings} bracket={bracket} teamToParticipant={teamToParticipant} />
+      )}
+      {activeTab === "status" && (
+        <TeamStatus participants={PARTICIPANTS} statusByTeam={statusByTeam} />
       )}
       {activeTab === "underdogs" && (
         <Leaderboard
