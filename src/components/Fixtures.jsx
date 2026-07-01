@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const STATUS_BADGES = {
   FINISHED: { label: "FT", color: "#3a5070", bg: "#0d1e30" },
@@ -73,6 +73,8 @@ function FixtureRow({ match, teamToParticipant }) {
 export default function Fixtures({ fixtures, teamToParticipant, participants }) {
   const [filter, setFilter] = useState("all");
   const [selectedParticipant, setSelectedParticipant] = useState("");
+  const todaySectionRef = useRef(null);
+  const hasAutoScrolled = useRef(false);
 
   const allMatches = [
     ...(fixtures.live || []),
@@ -100,6 +102,14 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
     acc[date].push(m);
     return acc;
   }, {});
+
+  const todayLabel = new Date().toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" });
+
+  useEffect(() => {
+    if (hasAutoScrolled.current || !todaySectionRef.current) return;
+    todaySectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    hasAutoScrolled.current = true;
+  }, [filtered.length]);
 
   return (
     <main style={{ paddingBottom: 60 }}>
@@ -145,7 +155,7 @@ export default function Fixtures({ fixtures, teamToParticipant, participants }) 
       ) : null}
 
       {Object.entries(byDate).map(([date, matches]) => (
-        <section key={date}>
+        <section key={date} ref={date === todayLabel ? todaySectionRef : null}>
           <div style={{
             padding: "10px 16px",
             color: "#3a5070",
