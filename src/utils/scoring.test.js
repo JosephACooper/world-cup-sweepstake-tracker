@@ -299,7 +299,7 @@ describe("deriveTeamStatus", () => {
     expect(status.England).toEqual({ status: "out", outAt: "Final" });
   });
 
-  it("does not mark group stage teams out until the Round of 32 lineup is known", () => {
+  it("does not mark group stage teams out while group matches are still live or scheduled anywhere", () => {
     const status = deriveTeamStatus({
       finished: [
         match("GROUP_STAGE", "Canada", "Brazil", false),
@@ -307,12 +307,12 @@ describe("deriveTeamStatus", () => {
         match("GROUP_STAGE", "Canada", "Germany", false),
       ],
       live: [],
-      scheduled: [],
+      scheduled: [match("GROUP_STAGE", "Japan", "Egypt", null, "SCHEDULED")],
     });
     expect(status.Canada).toBeUndefined();
   });
 
-  it("marks a team out at Group Stage once R32 lineup excludes them", () => {
+  it("marks a group-stage team out once the whole group stage is over and it has no upcoming fixture", () => {
     const status = deriveTeamStatus({
       finished: [
         match("GROUP_STAGE", "Canada", "Brazil", false),
@@ -324,9 +324,13 @@ describe("deriveTeamStatus", () => {
     });
     expect(status.Canada).toEqual({ status: "out", outAt: "Group Stage" });
     expect(status.Brazil).toBeUndefined();
+    expect(status.Spain).toBeUndefined();
   });
 
-  it("does not evaluate group elimination while R32 fixtures still have TBD teams", () => {
+  it("marks every non-qualifying team out once the group stage is over, even without a full R32 lineup published", () => {
+    // Only one R32 match is known; the rest of the bracket (other groups'
+    // best-third-place slots) hasn't been fixtured yet — Canada should still
+    // be correctly flagged since it simply has no game left anywhere.
     const status = deriveTeamStatus({
       finished: [
         match("GROUP_STAGE", "Canada", "Brazil", false),
@@ -334,47 +338,18 @@ describe("deriveTeamStatus", () => {
         match("GROUP_STAGE", "Canada", "Germany", false),
       ],
       live: [],
-      scheduled: [{ status: "SCHEDULED", stage: "ROUND_OF_32", homeTeam: {}, awayTeam: {}, score: { winner: null } }],
+      scheduled: [match("ROUND_OF_32", "Argentina", "Uruguay", null, "SCHEDULED")],
     });
-    expect(status.Canada).toBeUndefined();
-  });
-
-  it("marks last place in a completed group out immediately, even while other groups' R32 slots are still TBD", () => {
-    const standings = [{
-      group: "GROUP_A",
-      table: [
-        { position: 1, playedGames: 3, team: { name: "Brazil" } },
-        { position: 2, playedGames: 3, team: { name: "Spain" } },
-        { position: 3, playedGames: 3, team: { name: "Germany" } },
-        { position: 4, playedGames: 3, team: { name: "Canada" } },
-      ],
-    }];
-    const status = deriveTeamStatus({
-      finished: [
-        match("GROUP_STAGE", "Canada", "Brazil", false),
-        match("GROUP_STAGE", "Canada", "Spain", false),
-        match("GROUP_STAGE", "Canada", "Germany", false),
-      ],
-      live: [],
-      // Another group's R32 slot is still unresolved (best-third-place TBD).
-      scheduled: [{ status: "SCHEDULED", stage: "ROUND_OF_32", homeTeam: {}, awayTeam: {}, score: { winner: null } }],
-    }, standings);
     expect(status.Canada).toEqual({ status: "out", outAt: "Group Stage" });
-    expect(status.Brazil).toBeUndefined();
-    expect(status.Spain).toBeUndefined();
-    expect(status.Germany).toBeUndefined();
   });
 
-  it("leaves a group untouched until all its teams have finished their group games", () => {
-    const standings = [{
-      group: "GROUP_A",
-      table: [
-        { position: 1, playedGames: 3, team: { name: "Brazil" } },
-        { position: 2, playedGames: 2, team: { name: "Spain" } },
-      ],
-    }];
-    const status = deriveTeamStatus({ finished: [], live: [], scheduled: [] }, standings);
-    expect(status.Brazil).toBeUndefined();
-    expect(status.Spain).toBeUndefined();
+  it("does not mark a knockout winner out just because its next fixture isn't published yet", () => {
+    const status = deriveTeamStatus({
+      finished: [match("ROUND_OF_16", "France", "Japan", true)],
+      live: [],
+      scheduled: [],
+    });
+    expect(status.France).toBeUndefined();
+    expect(status.Japan).toEqual({ status: "out", outAt: "Round of 16" });
   });
 });

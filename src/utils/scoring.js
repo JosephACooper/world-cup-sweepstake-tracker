@@ -17,15 +17,11 @@ const KNOCKOUT_STAGE_LABELS = {
   FINAL:          "Final",
 };
 
-// Teams play a 3-match round-robin group stage (12 groups of 4) before Round of 32.
-const GROUP_STAGE_MATCH_COUNT = 3;
-
 // Returns { [apiName]: { status: "in" | "out" | "champion", outAt: string | null } }
-export function deriveTeamStatus(fixtures = {}, standings = []) {
+export function deriveTeamStatus(fixtures = {}) {
   const finished = fixtures.finished || [];
   const live = fixtures.live || [];
   const scheduled = fixtures.scheduled || [];
-  const allMatches = [...finished, ...live, ...scheduled];
 
   const status = {};
   const setOut = (name, stage) => {
@@ -37,10 +33,15 @@ export function deriveTeamStatus(fixtures = {}, standings = []) {
     status[name] = { status: "champion", outAt: null };
   };
 
+  // Knockout losses (and the final) are unambiguous on their own.
+  const knockoutParticipants = new Set();
   for (const match of finished) {
     if (match.stage === "GROUP_STAGE") continue;
     const homeName = match.homeTeam?.name;
     const awayName = match.awayTeam?.name;
+    if (homeName) knockoutParticipants.add(homeName);
+    if (awayName) knockoutParticipants.add(awayName);
+
     const winner = match.score?.winner;
     if (!homeName || !awayName || !winner || winner === "DRAW") continue;
 
@@ -55,36 +56,24 @@ export function deriveTeamStatus(fixtures = {}, standings = []) {
     else setOut(homeName, stageLabel);
   }
 
-  // Last place in a finished group is eliminated immediately — this doesn't
-  // depend on the cross-group best-third-place race, so it's known as soon
-  // as that group's own matches are done.
-  for (const group of standings) {
-    const table = group.table || [];
-    if (table.length === 0) continue;
-    const complete = table.every(row => row.playedGames >= GROUP_STAGE_MATCH_COUNT);
-    if (!complete) continue;
-    const last = table.find(row => row.position === table.length);
-    if (last?.team?.name) setOut(last.team.name, "Group Stage");
-  }
-
-  // The remaining group-stage eliminations (3rd-placed teams that miss out on
-  // a best-third-place spot) can only be confirmed once the Round of 32
-  // lineup — which hinges on every group finishing — has actually been fixtured.
-  const r32Matches = allMatches.filter(m => m.stage === "ROUND_OF_32");
-  const r32TeamsKnown = r32Matches.length > 0 && r32Matches.every(m => m.homeTeam?.name && m.awayTeam?.name);
-  if (r32TeamsKnown) {
-    const r32Teams = new Set(r32Matches.flatMap(m => [m.homeTeam.name, m.awayTeam.name]));
-    const groupMatchCounts = {};
+  // Once no group-stage matches remain live or scheduled anywhere, a team that
+  // played in the group stage but has no upcoming fixture of its own simply
+  // didn't qualify. This sidesteps needing the full Round of 32 lineup (which
+  // can lag behind the actual results) — a missing next fixture is enough.
+  const groupStageOver = ![...live, ...scheduled].some(m => m.stage === "GROUP_STAGE");
+  if (groupStageOver) {
+    const upcomingTeams = new Set();
+    for (const match of [...live, ...scheduled]) {
+      if (match.homeTeam?.name) upcomingTeams.add(match.homeTeam.name);
+      if (match.awayTeam?.name) upcomingTeams.add(match.awayTeam.name);
+    }
     for (const match of finished) {
       if (match.stage !== "GROUP_STAGE") continue;
-      const homeName = match.homeTeam?.name;
-      const awayName = match.awayTeam?.name;
-      if (homeName) groupMatchCounts[homeName] = (groupMatchCounts[homeName] || 0) + 1;
-      if (awayName) groupMatchCounts[awayName] = (groupMatchCounts[awayName] || 0) + 1;
-    }
-    for (const [name, count] of Object.entries(groupMatchCounts)) {
-      if (count >= GROUP_STAGE_MATCH_COUNT && !r32Teams.has(name)) {
-        setOut(name, "Group Stage");
+      for (const name of [match.homeTeam?.name, match.awayTeam?.name]) {
+        // Teams that already played a knockout match are resolved above (win
+        // or loss) — skip them here even if their next fixture isn't posted yet.
+        if (!name || knockoutParticipants.has(name)) continue;
+        if (!upcomingTeams.has(name)) setOut(name, "Group Stage");
       }
     }
   }
