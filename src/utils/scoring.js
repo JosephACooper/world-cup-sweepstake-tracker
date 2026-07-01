@@ -17,6 +17,18 @@ const KNOCKOUT_STAGE_LABELS = {
   FINAL:          "Final",
 };
 
+// football-data.org's stage naming predates the 48-team format and is
+// inconsistent about it — normalize known aliases (e.g. "LAST_16") to the
+// canonical names used throughout this file.
+const STAGE_ALIASES = {
+  LAST_32: "ROUND_OF_32",
+  LAST_16: "ROUND_OF_16",
+};
+
+export function normalizeStage(stage) {
+  return STAGE_ALIASES[stage] ?? stage;
+}
+
 // Returns { [apiName]: { status: "in" | "out" | "champion", outAt: string | null } }
 export function deriveTeamStatus(fixtures = {}) {
   const finished = fixtures.finished || [];
@@ -36,7 +48,8 @@ export function deriveTeamStatus(fixtures = {}) {
   // Knockout losses (and the final) are unambiguous on their own.
   const knockoutParticipants = new Set();
   for (const match of finished) {
-    if (match.stage === "GROUP_STAGE") continue;
+    const stage = normalizeStage(match.stage);
+    if (stage === "GROUP_STAGE") continue;
     const homeName = match.homeTeam?.name;
     const awayName = match.awayTeam?.name;
     if (homeName) knockoutParticipants.add(homeName);
@@ -45,13 +58,13 @@ export function deriveTeamStatus(fixtures = {}) {
     const winner = match.score?.winner;
     if (!homeName || !awayName || !winner || winner === "DRAW") continue;
 
-    if (match.stage === "FINAL") {
+    if (stage === "FINAL") {
       if (winner === "HOME_TEAM") { setChampion(homeName); setOut(awayName, "Final"); }
       else { setChampion(awayName); setOut(homeName, "Final"); }
       continue;
     }
 
-    const stageLabel = KNOCKOUT_STAGE_LABELS[match.stage] ?? match.stage;
+    const stageLabel = KNOCKOUT_STAGE_LABELS[stage] ?? stage;
     if (winner === "HOME_TEAM") setOut(awayName, stageLabel);
     else setOut(homeName, stageLabel);
   }
@@ -60,7 +73,7 @@ export function deriveTeamStatus(fixtures = {}) {
   // played in the group stage but has no upcoming fixture of its own simply
   // didn't qualify. This sidesteps needing the full Round of 32 lineup (which
   // can lag behind the actual results) — a missing next fixture is enough.
-  const groupStageOver = ![...live, ...scheduled].some(m => m.stage === "GROUP_STAGE");
+  const groupStageOver = ![...live, ...scheduled].some(m => normalizeStage(m.stage) === "GROUP_STAGE");
   if (groupStageOver) {
     const upcomingTeams = new Set();
     for (const match of [...live, ...scheduled]) {
@@ -68,7 +81,7 @@ export function deriveTeamStatus(fixtures = {}) {
       if (match.awayTeam?.name) upcomingTeams.add(match.awayTeam.name);
     }
     for (const match of finished) {
-      if (match.stage !== "GROUP_STAGE") continue;
+      if (normalizeStage(match.stage) !== "GROUP_STAGE") continue;
       for (const name of [match.homeTeam?.name, match.awayTeam?.name]) {
         // Teams that already played a knockout match are resolved above (win
         // or loss) — skip them here even if their next fixture isn't posted yet.
@@ -97,7 +110,7 @@ export function getMultiplier(rank) {
 }
 
 function stageToPoints(stage) {
-  switch (stage) {
+  switch (normalizeStage(stage)) {
     case "GROUP_STAGE":   return 0;
     case "ROUND_OF_32":   return 0.5;
     case "ROUND_OF_16":   return 1;
@@ -120,7 +133,7 @@ export function deriveTeamFinishes(matches = []) {
   return matches.reduce((finishes, match) => {
     if (match.status !== "FINISHED") return finishes;
 
-    const stage = match.stage;
+    const stage = normalizeStage(match.stage);
     const homeName = match.homeTeam?.name;
     const awayName = match.awayTeam?.name;
     if (!homeName || !awayName) return finishes;
